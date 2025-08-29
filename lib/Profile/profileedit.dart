@@ -228,14 +228,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
           fullName: _fullNameController.text.trim(),
           bio: _bioController.text.trim(),
           location: _locationController.text.trim(),
-<<<<<<< HEAD
           website: _websiteController.text.trim(),
           avatarUrl: avatarUrlToSave,
-          updateAvatar: _removeProfilePicture || _newAvatarUrl != null, // Update avatar if removing or adding
-=======
-          avatarUrl:
-              _newAvatarUrl, // Pass empty string to remove, null to keep unchanged
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
+          updateAvatar: _removeProfilePicture || _newAvatarUrl != null,
         );
 
         if (!mounted) return;
@@ -379,104 +374,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
                   SizedBox(height: verticalPadding),
 
-<<<<<<< HEAD
-// Avatar + camera (drop this in place of your current Stack)
-Center(
-  child: SizedBox(
-    width: avatarSize * 2,   // diameter
-    height: avatarSize * 2,
-    child: Stack(
-      clipBehavior: Clip.none, // allow the camera button to overflow a bit
-      children: [
-        // Avatar fills the box
-        Positioned.fill(
-          child: CircleAvatar(
-            backgroundColor: const Color(0xFF007F8C),
-            backgroundImage: _removeProfilePicture
-                ? null
-                : _newAvatarUrl != null
-                    ? NetworkImage(_newAvatarUrl!)
-                    : _currentUser?.avatarUrl != null
-                        ? NetworkImage(_currentUser!.avatarUrl!)
-                        : null,
-            child: (_removeProfilePicture ||
-                   (_newAvatarUrl == null && _currentUser?.avatarUrl == null))
-                ? Text(
-                    _getInitials(),
-                    style: TextStyle(
-                      fontSize: avatarSize * 0.4,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  )
-                : null,
-          ),
-        ),
 
-        // Camera button anchored to the avatar's bottom-right
-        Positioned(
-          right: -4, // small negative to hug the edge nicely
-          bottom: -4,
-          child: GestureDetector(
-            onTap: _isUploadingPhoto ? null : _pickAndUploadPhoto,
-            child: Material(
-              color: const Color(0xFF007F8C),
-              shape: const CircleBorder(),
-              elevation: 3,
-              child: Container(
-                padding: EdgeInsets.all(avatarSize * 0.12),
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
-                ),
-                child: _isUploadingPhoto
-                    ? SizedBox(
-                        width: avatarSize * 0.22,
-                        height: avatarSize * 0.22,
-                        child: const CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
-                        ),
-                      )
-                    : Icon(Icons.camera_alt,
-                        color: Colors.white, size: avatarSize * 0.24),
-              ),
-            ),
-          ),
-        ),
-
-        // Remove button anchored to the avatar's top-left (only show if there's a profile picture)
-        if ((_currentUser?.avatarUrl != null && !_removeProfilePicture) || _newAvatarUrl != null)
-          Positioned(
-            left: -4,
-            top: -4,
-            child: GestureDetector(
-              onTap: _removeProfilePic,
-              child: Material(
-                color: Colors.red,
-                shape: const CircleBorder(),
-                elevation: 3,
-                child: Container(
-                  padding: EdgeInsets.all(avatarSize * 0.08),
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
-                  child: Icon(
-                    Icons.close,
-                    color: Colors.white,
-                    size: avatarSize * 0.2,
-                  ),
-                ),
-              ),
-            ),
-          ),
-      ],
-    ),
-  ),
-),
-
-=======
                   // Avatar + camera (drop this in place of your current Stack)
                   Center(
                     child: SizedBox(
@@ -557,7 +455,7 @@ Center(
                       ),
                     ),
                   ),
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
+
 
                   SizedBox(height: verticalPadding),
 

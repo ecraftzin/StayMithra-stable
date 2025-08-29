@@ -56,7 +56,7 @@ class _MainPageState extends State<MainPage> {
       final profile = await _authService.getCurrentUserProfile();
       if (mounted) {
         setState(() {
-          _currentUserProfile = profile;
+          _currentUser = profile;
         });
       }
     } catch (e) {
@@ -153,63 +153,11 @@ class _MainPageState extends State<MainPage> {
   }
 
   Widget _buildProfileIcon() {
-<<<<<<< HEAD
     return NavigationUserAvatar(
       user: _currentUser,
       isSelected: _currentIndex == 3,
       size: 24,
     );
-=======
-    const double iconSize = 24.0;
-
-    if (_currentUserProfile?.avatarUrl != null &&
-        _currentUserProfile!.avatarUrl!.isNotEmpty) {
-      return Container(
-        width: iconSize,
-        height: iconSize,
-        decoration: const BoxDecoration(shape: BoxShape.circle),
-        child: ClipOval(
-          child: CachedNetworkImage(
-            imageUrl: _currentUserProfile!.avatarUrl!,
-            fit: BoxFit.cover,
-            placeholder: (context, url) => Container(
-              width: iconSize,
-              height: iconSize,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey,
-              ),
-              child: const Icon(
-                Icons.account_circle_outlined,
-                size: iconSize,
-                color: Colors.white,
-              ),
-            ),
-            errorWidget: (context, url, error) => Container(
-              width: iconSize,
-              height: iconSize,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.grey,
-              ),
-              child: const Icon(
-                Icons.account_circle_outlined,
-                size: iconSize,
-                color: Colors.white,
-              ),
-            ),
-          ),
-        ),
-      );
-    } else {
-      // Show profile icon when no image is available
-      return const Icon(
-        Icons.account_circle_outlined,
-        size: iconSize,
-        color: Colors.grey,
-      );
-    }
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
   }
 
   @override
@@ -417,13 +365,9 @@ class _MainPageState extends State<MainPage> {
               label: "Search",
             ),
             BottomNavigationBarItem(
-<<<<<<< HEAD
-                icon: _buildProfileIcon(), label: "Account"),
-=======
               icon: _buildProfileIcon(),
               label: "Account",
             ),
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
           ],
         ),
       ),
