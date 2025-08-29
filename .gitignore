@@ -1,0 +1,15 @@
+.dart_tool/
+.packages
+.pub/
+.pub-cache/
+build/
+android/.gradle/
+android/app/build/
+ios/Pods/
+**/*.apk
+**/*.aab
+**/*.ipa
+**/*.zip
+**/*.so
+**/*.keystore
+**/*.jks
