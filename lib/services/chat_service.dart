@@ -88,16 +88,7 @@ class ChatService {
           .select('''
             *,
             user1:users!chats_user1_id_fkey(*),
-<<<<<<< HEAD
-
             user2:users!chats_user2_id_fkey(*)
-
-            user2:users!chats_user2_id_fkey(*),
-            messages:messages(*)
-
-=======
-            user2:users!chats_user2_id_fkey(*)
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
           ''')
           .or('user1_id.eq.$userId,user2_id.eq.$userId')
           .order('last_message_at', ascending: false);

@@ -16,7 +16,11 @@ class UserProfilePage extends StatefulWidget {
   final String userId;
   final String? userName;
 
-  const UserProfilePage({super.key, required this.userId, this.userName});
+  const UserProfilePage({
+    super.key,
+    required this.userId,
+    this.userName,
+  });
 
   @override
   State<UserProfilePage> createState() => _UserProfilePageState();
@@ -114,10 +118,8 @@ class _UserProfilePageState extends State<UserProfilePage>
           .eq('following_id', userId);
 
       // Count following (people this user follows)
-      final followingResponse = await supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', userId);
+      final followingResponse =
+          await supabase.from('follows').select('id').eq('follower_id', userId);
 
       if (mounted) {
         setState(() {
@@ -251,16 +253,10 @@ class _UserProfilePageState extends State<UserProfilePage>
       switch (_followStatus) {
         case 'not_following':
         case 'followed_by':
-<<<<<<< HEAD
           final result = await _followRequestService.sendFollowRequest(widget.userId);
           success = result['success'] ?? false;
           message = result['message'] ?? 'Unknown error';
 
-=======
-          success = await _followRequestService.sendFollowRequest(
-            widget.userId,
-          );
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
           if (success) {
             final newStatus = result['status'] ?? 'requested';
             setState(() => _followStatus = newStatus);
@@ -274,21 +270,18 @@ class _UserProfilePageState extends State<UserProfilePage>
           break;
 
         case 'requested':
-          success = await _followRequestService.cancelFollowRequest(
-            widget.userId,
-          );
-          message = success
-              ? 'Follow request cancelled'
-              : 'Failed to cancel request';
+          success =
+              await _followRequestService.cancelFollowRequest(widget.userId);
+          message =
+              success ? 'Follow request cancelled' : 'Failed to cancel request';
           if (success) setState(() => _followStatus = 'not_following');
           break;
 
         case 'following':
         case 'mutual':
           success = await _followRequestService.unfollowUser(widget.userId);
-          message = success
-              ? 'Unfollowed ${_user?.username}'
-              : 'Failed to unfollow';
+          message =
+              success ? 'Unfollowed ${_user?.username}' : 'Failed to unfollow';
           if (success) setState(() => _followStatus = 'not_following');
           break;
       }
@@ -304,7 +297,10 @@ class _UserProfilePageState extends State<UserProfilePage>
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: $e'),
+            backgroundColor: Colors.red,
+          ),
         );
       }
     }
@@ -329,9 +325,9 @@ class _UserProfilePageState extends State<UserProfilePage>
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error starting chat: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error starting chat: $e')),
+        );
       }
     }
   }
@@ -349,7 +345,9 @@ class _UserProfilePageState extends State<UserProfilePage>
           backgroundColor: const Color(0xFF007F8C),
           foregroundColor: Colors.white,
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: const Center(
+          child: CircularProgressIndicator(),
+        ),
       );
     }
 
@@ -361,7 +359,9 @@ class _UserProfilePageState extends State<UserProfilePage>
           backgroundColor: const Color(0xFF007F8C),
           foregroundColor: Colors.white,
         ),
-        body: const Center(child: Text('User not found')),
+        body: const Center(
+          child: Text('User not found'),
+        ),
       );
     }
 
@@ -468,37 +468,6 @@ class _UserProfilePageState extends State<UserProfilePage>
                   maxLines: 3,
                 ),
               ),
-            if (_user?.location != null && _user!.location!.isNotEmpty)
-              Padding(
-                padding: EdgeInsets.only(
-                  top: screenHeight * 0.01,
-                  left: screenWidth * 0.06,
-                  right: screenWidth * 0.06,
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.location_on,
-                      color: Colors.white70,
-                      size: screenWidth * 0.04,
-                    ),
-                    SizedBox(width: screenWidth * 0.01),
-                    Flexible(
-                      child: Text(
-                        _user!.location!,
-                        style: TextStyle(
-                          fontSize: screenWidth * 0.035,
-                          color: Colors.white70,
-                        ),
-                        textAlign: TextAlign.center,
-                        overflow: TextOverflow.ellipsis,
-                        maxLines: 1,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             SizedBox(height: screenHeight * 0.02),
             // Stats Row
             Padding(
@@ -511,43 +480,18 @@ class _UserProfilePageState extends State<UserProfilePage>
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.2),
-                  ),
+                  border: Border.all(color: Colors.white.withValues(alpha: 0.2)),
                 ),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    Expanded(
-                      child: _buildStatColumn('Posts', '${_userPosts.length}'),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 30,
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                    Expanded(
-                      child: _buildStatColumn(
-                        'Campaigns',
-                        '${_userCampaigns.length}',
-                      ),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 30,
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                    Expanded(
-                      child: _buildStatColumn('Followers', '$_followersCount'),
-                    ),
-                    Container(
-                      width: 1,
-                      height: 30,
-                      color: Colors.white.withValues(alpha: 0.3),
-                    ),
-                    Expanded(
-                      child: _buildStatColumn('Following', '$_followingCount'),
-                    ),
+                    Expanded(child: _buildStatColumn('Posts', '${_userPosts.length}')),
+                    Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.3)),
+                    Expanded(child: _buildStatColumn('Campaigns', '${_userCampaigns.length}')),
+                    Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.3)),
+                    Expanded(child: _buildStatColumn('Followers', '$_followersCount')),
+                    Container(width: 1, height: 30, color: Colors.white.withValues(alpha: 0.3)),
+                    Expanded(child: _buildStatColumn('Following', '$_followingCount')),
                   ],
                 ),
               ),
@@ -576,7 +520,10 @@ class _UserProfilePageState extends State<UserProfilePage>
         SizedBox(height: 2),
         Text(
           title,
-          style: const TextStyle(fontSize: 12, color: Colors.white70),
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.white70,
+          ),
           overflow: TextOverflow.ellipsis,
           maxLines: 1,
           textAlign: TextAlign.center,
@@ -612,7 +559,10 @@ class _UserProfilePageState extends State<UserProfilePage>
             SizedBox(height: 16),
             Text(
               'No posts yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
@@ -644,7 +594,10 @@ class _UserProfilePageState extends State<UserProfilePage>
             SizedBox(height: 16),
             Text(
               'No campaigns yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
@@ -679,7 +632,10 @@ class _UserProfilePageState extends State<UserProfilePage>
             SizedBox(height: 16),
             Text(
               'No content yet',
-              style: TextStyle(fontSize: 18, color: Colors.grey),
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey,
+              ),
             ),
           ],
         ),
@@ -725,7 +681,9 @@ class _UserProfilePageState extends State<UserProfilePage>
                   fit: BoxFit.cover,
                   placeholder: (context, url) => Container(
                     color: Colors.grey[300],
-                    child: const Center(child: CircularProgressIndicator()),
+                    child: const Center(
+                      child: CircularProgressIndicator(),
+                    ),
                   ),
                   errorWidget: (context, url, error) => Container(
                     color: Colors.grey[300],

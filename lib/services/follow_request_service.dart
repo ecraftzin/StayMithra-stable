@@ -77,12 +77,7 @@ class FollowRequestService {
           .from('users')
           .select('username, full_name')
           .eq('id', currentUser.id)
-          .maybeSingle();
-
-      if (requesterInfo == null) {
-        print('Requester user info not found: ${currentUser.id}');
-        return false;
-      }
+          .single();
 
       // Create notification for the target user
       await _notificationService.createNotification(
@@ -114,12 +109,7 @@ class FollowRequestService {
   Future<bool> acceptFollowRequest(String requestId) async {
     try {
       final currentUser = _supabase.auth.currentUser;
-      if (currentUser == null) {
-        print('Error: No current user found');
-        return false;
-      }
-
-      print('Accepting follow request: $requestId for user: ${currentUser.id}');
+      if (currentUser == null) return false;
 
       // Get the follow request details
       final request = await _supabase
@@ -127,49 +117,27 @@ class FollowRequestService {
           .select('requester_id, requested_id')
           .eq('id', requestId)
           .eq('status', 'pending')
-          .eq(
-            'requested_id',
-            currentUser.id,
-          ) // Ensure current user is the one being requested
-          .maybeSingle();
-
-      if (request == null) {
-        print('Follow request not found or already processed: $requestId');
-        return false;
-      }
-
-      print('Found follow request: ${request.toString()}');
+          .eq('requested_id',
+              currentUser.id) // Ensure current user is the one being requested
+          .single();
 
       // Update request status to accepted
       await _supabase
           .from('follow_requests')
-          .update({'status': 'accepted'})
-          .eq('id', requestId);
-
-      print('Updated request status to accepted');
+          .update({'status': 'accepted'}).eq('id', requestId);
 
       // Add to follows table (current user accepts, so requester follows current user)
-      print(
-        'Creating follow relationship: follower=${request['requester_id']}, following=${request['requested_id']}',
-      );
       await _supabase.from('follows').insert({
         'follower_id': request['requester_id'],
         'following_id': request['requested_id'],
       });
-
-      print('Successfully created follow relationship');
 
       // Get accepter user info for notification
       final accepterInfo = await _supabase
           .from('users')
           .select('username, full_name')
           .eq('id', request['requested_id'])
-          .maybeSingle();
-
-      if (accepterInfo == null) {
-        print('Accepter user info not found: ${request['requested_id']}');
-        return false;
-      }
+          .single();
 
       // Create notification for the requester
       await _notificationService.createNotification(
@@ -187,12 +155,6 @@ class FollowRequestService {
       return true;
     } catch (e) {
       print('Error accepting follow request: $e');
-      print('Error type: ${e.runtimeType}');
-      if (e.toString().contains('RLS') || e.toString().contains('policy')) {
-        print(
-          'RLS Policy Error: This might be due to insufficient permissions',
-        );
-      }
       return false;
     }
   }
@@ -203,8 +165,7 @@ class FollowRequestService {
       // Update request status to rejected
       await _supabase
           .from('follow_requests')
-          .update({'status': 'rejected'})
-          .eq('id', requestId);
+          .update({'status': 'rejected'}).eq('id', requestId);
 
       return true;
     } catch (e) {
@@ -310,9 +271,7 @@ class FollowRequestService {
 
   // Get comprehensive follow status between current user and target user
   Future<String> getFollowStatus(
-    String currentUserId,
-    String targetUserId,
-  ) async {
+      String currentUserId, String targetUserId) async {
     try {
       print('=== DEBUG: Getting follow status for $currentUserId -> $targetUserId ===');
 
@@ -351,14 +310,11 @@ class FollowRequestService {
       final acceptedRequests = await _supabase
           .from('follow_requests')
           .select('id, requester_id, requested_id')
-          .or(
-            'and(requester_id.eq.$currentUserId,requested_id.eq.$targetUserId),and(requester_id.eq.$targetUserId,requested_id.eq.$currentUserId)',
-          )
+          .or('and(requester_id.eq.$currentUserId,requested_id.eq.$targetUserId),and(requester_id.eq.$targetUserId,requested_id.eq.$currentUserId)')
           .eq('status', 'accepted');
 
-      final hasAcceptedRequest = acceptedRequests.isNotEmpty
-          ? acceptedRequests.first
-          : null;
+      final hasAcceptedRequest =
+          acceptedRequests.isNotEmpty ? acceptedRequests.first : null;
 
       print('DEBUG: hasAcceptedRequest = $hasAcceptedRequest');
 
@@ -410,8 +366,7 @@ class FollowRequestService {
 
   // Helper method to create follow relationship from accepted request
   Future<void> _createFollowFromAcceptedRequest(
-    Map<String, dynamic> acceptedRequest,
-  ) async {
+      Map<String, dynamic> acceptedRequest) async {
     try {
       final requesterId = acceptedRequest['requester_id'] as String;
       final requestedId = acceptedRequest['requested_id'] as String;
@@ -488,12 +443,9 @@ class FollowRequestService {
   // Get user's followers
   Future<List<UserModel>> getFollowers(String userId) async {
     try {
-      final response = await _supabase
-          .from('follows')
-          .select('''
+      final response = await _supabase.from('follows').select('''
             follower:users!follows_follower_id_fkey(*)
-          ''')
-          .eq('following_id', userId);
+          ''').eq('following_id', userId);
 
       return (response as List)
           .map((item) => UserModel.fromJson(item['follower']))
@@ -507,12 +459,9 @@ class FollowRequestService {
   // Get users that user is following
   Future<List<UserModel>> getFollowing(String userId) async {
     try {
-      final response = await _supabase
-          .from('follows')
-          .select('''
+      final response = await _supabase.from('follows').select('''
             following:users!follows_following_id_fkey(*)
-          ''')
-          .eq('follower_id', userId);
+          ''').eq('follower_id', userId);
 
       return (response as List)
           .map((item) => UserModel.fromJson(item['following']))

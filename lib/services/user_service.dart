@@ -117,13 +117,7 @@ class UserService {
       if (bio != null) updates['bio'] = bio;
       if (location != null) updates['location'] = location;
       if (website != null) updates['website'] = website;
-<<<<<<< HEAD
       if (updateAvatar) updates['avatar_url'] = avatarUrl; // Can be null to remove
-=======
-      if (avatarUrl != null) {
-        updates['avatar_url'] = avatarUrl.isEmpty ? null : avatarUrl;
-      }
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
 
       updates['updated_at'] = DateTime.now().toIso8601String();
 

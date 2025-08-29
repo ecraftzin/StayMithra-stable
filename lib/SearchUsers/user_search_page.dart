@@ -365,16 +365,16 @@ class _UserSearchPageState extends State<UserSearchPage> {
           message = result['message'] ?? 'Unknown error';
 
           if (success) {
-<<<<<<< HEAD
+
             final newStatus = result['status'] ?? 'mutual';
             _followStatuses[user.id] = newStatus;
-=======
+
             message = 'Follow request sent!';
             _followStatuses[user.id] =
                 'requested'; // Set to requested until accepted
             // Check the new status after sending request
             await _checkFollowStatus(user.id);
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
+
           } else {
             // If the request failed because they're already following, update the status
             final returnedStatus = result['status'];
