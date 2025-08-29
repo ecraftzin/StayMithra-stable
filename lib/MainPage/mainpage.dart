@@ -11,10 +11,7 @@ import 'package:staymitra/services/notification_service.dart';
 import 'package:staymitra/services/chat_service.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/models/user_model.dart';
-<<<<<<< HEAD
 import 'package:staymitra/widgets/user_avatar.dart';
-=======
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -29,11 +26,7 @@ class _MainPageState extends State<MainPage> {
   final AuthService _authService = AuthService();
   int _unreadNotificationCount = 0;
   int _unreadChatCount = 0;
-<<<<<<< HEAD
   UserModel? _currentUser;
-=======
-  UserModel? _currentUserProfile;
->>>>>>> 159c28c7e03198bda65727b984f21decf3f991ba
 
   final List<Widget> _pages = [
     const StaymithraHomePage(),
