@@ -214,7 +214,7 @@ class _FeedItemWidgetState extends State<FeedItemWidget> {
   int _currentParticipantCount = 0;
 
   // Media carousel state
-  PageController _pageController = PageController();
+  final PageController _pageController = PageController();
   int _currentMediaIndex = 0;
   Timer? _autoScrollTimer;
 

@@ -12,7 +12,7 @@ class UserAvatar extends StatelessWidget {
   final bool showBorder;
 
   const UserAvatar({
-    Key? key,
+    super.key,
     required this.user,
     this.size = 40,
     this.backgroundColor,
@@ -20,7 +20,7 @@ class UserAvatar extends StatelessWidget {
     this.borderColor,
     this.borderWidth = 2,
     this.showBorder = false,
-  }) : super(key: key);
+  });
 
   String _getInitials() {
     if (user?.fullName != null && user!.fullName!.isNotEmpty) {
@@ -106,11 +106,11 @@ class NavigationUserAvatar extends StatelessWidget {
   final double size;
 
   const NavigationUserAvatar({
-    Key? key,
+    super.key,
     required this.user,
     required this.isSelected,
     this.size = 24,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -136,10 +136,10 @@ class FeedUserAvatar extends StatelessWidget {
   final double size;
 
   const FeedUserAvatar({
-    Key? key,
+    super.key,
     required this.user,
     this.size = 40,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -159,10 +159,10 @@ class ProfileUserAvatar extends StatelessWidget {
   final double size;
 
   const ProfileUserAvatar({
-    Key? key,
+    super.key,
     required this.user,
     this.size = 80,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

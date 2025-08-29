@@ -83,6 +83,7 @@ class _CampaignDetailPageState extends State<CampaignDetailPage> {
     }
   }
 
+
   void _handleComment() {
     Navigator.push(
       context,
@@ -238,6 +239,7 @@ class _CampaignDetailPageState extends State<CampaignDetailPage> {
                       child: ClipRRect(
                         borderRadius: BorderRadius.circular(screenWidth * 0.02),
                         child: CachedNetworkImage(
+                          
                           imageUrl: widget.campaign.imageUrls[index],
                           fit: BoxFit.cover,
                           placeholder: (context, url) => Container(

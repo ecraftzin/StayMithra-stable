@@ -101,7 +101,7 @@ class MigrationService {
             .select('id')
             .eq('post_id', postId);
 
-        if (comments.length > 0) {
+        if (comments.isNotEmpty) {
           await _supabase
               .from('posts')
               .update({'comments_count': comments.length})
@@ -118,7 +118,7 @@ class MigrationService {
             .select('id')
             .eq('campaign_id', campaignId);
 
-        if (comments.length > 0) {
+        if (comments.isNotEmpty) {
           await _supabase
               .from('campaigns')
               .update({'comments_count': comments.length})
