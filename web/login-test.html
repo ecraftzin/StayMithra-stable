@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login Test - StayMithra</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .btn {
+            background: #007F8C;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #006670;
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔍 StayMithra Login Test</h1>
+    
+    <div class="section">
+        <h3>Test Login Credentials</h3>
+        <p>Use this to test if your email and new password work correctly.</p>
+        
+        <div class="form-group">
+            <label for="email">Email:</label>
+            <input type="email" id="email" placeholder="Enter your email">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" placeholder="Enter your new password">
+        </div>
+        
+        <button class="btn" onclick="testLogin()">🔐 Test Login</button>
+        <button class="btn" onclick="checkUser()">👤 Check User Info</button>
+        <button class="btn" onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+    
+    <div class="section">
+        <h3>Test Results</h3>
+        <div id="results" class="result">No test performed yet...</div>
+    </div>
+    
+    <div class="section">
+        <h3>Instructions</h3>
+        <ol>
+            <li><strong>Enter your email</strong> (the one you used for password reset)</li>
+            <li><strong>Enter your new password</strong> (the one you just set)</li>
+            <li><strong>Click "Test Login"</strong> to see if the credentials work</li>
+            <li><strong>Check the results</strong> to see what's happening</li>
+        </ol>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://rssnqbqbrejnjeiukrdr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzc25xYnFicmVqbmplaXVrcmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTYyMzQsImV4cCI6MjA3MDgzMjIzNH0.DPX7FUSjueQ9ex3JTlsjhC78dq1kJY4VB7_2PQLKFGI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function testLogin() {
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            
+            if (!email || !password) {
+                showResult('Please enter both email and password', 'error');
+                return;
+            }
+            
+            showResult('Testing login...', 'info');
+            
+            try {
+                // First, sign out any existing session
+                await supabase.auth.signOut();
+                
+                // Try to sign in
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+                
+                if (error) {
+                    showResult(`Login failed: ${error.message}\n\nError details: ${JSON.stringify(error, null, 2)}`, 'error');
+                    return;
+                }
+                
+                if (data.user) {
+                    const result = {
+                        success: true,
+                        user: {
+                            id: data.user.id,
+                            email: data.user.email,
+                            emailConfirmed: data.user.email_confirmed_at,
+                            createdAt: data.user.created_at,
+                            lastSignIn: data.user.last_sign_in_at
+                        },
+                        session: {
+                            accessToken: data.session?.access_token ? 'Present' : 'Missing',
+                            refreshToken: data.session?.refresh_token ? 'Present' : 'Missing',
+                            expiresAt: data.session?.expires_at
+                        }
+                    };
+                    
+                    showResult(`Login successful!\n\n${JSON.stringify(result, null, 2)}`, 'success');
+                } else {
+                    showResult('Login failed: No user data returned', 'error');
+                }
+                
+            } catch (error) {
+                showResult(`Login error: ${error.message}\n\n${JSON.stringify(error, null, 2)}`, 'error');
+            }
+        }
+        
+        async function checkUser() {
+            const email = document.getElementById('email').value.trim();
+            
+            if (!email) {
+                showResult('Please enter an email address', 'error');
+                return;
+            }
+            
+            showResult('Checking user information...', 'info');
+            
+            try {
+                // Note: This is a simplified check - in production you'd need admin access
+                // to query user information directly
+                showResult(`User check for: ${email}\n\nNote: Direct user lookup requires admin privileges.\nTry the login test instead to verify credentials.`, 'info');
+                
+            } catch (error) {
+                showResult(`User check error: ${error.message}`, 'error');
+            }
+        }
+        
+        function showResult(message, type) {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.textContent = message;
+            resultsDiv.className = `result ${type}`;
+        }
+        
+        function clearResults() {
+            document.getElementById('results').textContent = 'No test performed yet...';
+            document.getElementById('results').className = 'result';
+        }
+    </script>
+</body>
+</html>

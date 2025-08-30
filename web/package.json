@@ -1,0 +1,16 @@
+{
+  "name": "staymithra-password-reset",
+  "version": "1.0.0",
+  "description": "Password reset web page for StayMithra app",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "keywords": ["password-reset", "supabase", "staymithra"],
+  "author": "StayMithra Team",
+  "license": "MIT",
+  "engines": {
+    "node": ">=14.0.0"
+  }
+}

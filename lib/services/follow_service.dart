@@ -1,0 +1,183 @@
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+class FollowService {
+  final SupabaseClient _supabase = Supabase.instance.client;
+
+  // Follow a user
+  Future<Map<String, dynamic>> followUser(String followerId, String followingId) async {
+    try {
+      // Check if already following
+      final existing = await _supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', followerId)
+          .eq('following_id', followingId)
+          .maybeSingle();
+
+      if (existing != null) {
+        return {
+          'success': false,
+          'message': 'Already following this user',
+          'followersCount': await getFollowersCount(followingId),
+          'followingCount': await getFollowingCount(followerId),
+        };
+      }
+
+      // Insert follow relationship
+      await _supabase.from('follows').insert({
+        'follower_id': followerId,
+        'following_id': followingId,
+      });
+
+      // Get updated counts
+      final followersCount = await getFollowersCount(followingId);
+      final followingCount = await getFollowingCount(followerId);
+
+      return {
+        'success': true,
+        'message': 'Successfully followed user',
+        'followersCount': followersCount,
+        'followingCount': followingCount,
+      };
+    } catch (e) {
+      print('Error following user: $e');
+      return {
+        'success': false,
+        'message': 'Error following user: $e',
+        'followersCount': 0,
+        'followingCount': 0,
+      };
+    }
+  }
+
+  // Unfollow a user
+  Future<Map<String, dynamic>> unfollowUser(String followerId, String followingId) async {
+    try {
+      // Check if currently following
+      final existing = await _supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', followerId)
+          .eq('following_id', followingId)
+          .maybeSingle();
+
+      if (existing == null) {
+        return {
+          'success': false,
+          'message': 'Not following this user',
+          'followersCount': await getFollowersCount(followingId),
+          'followingCount': await getFollowingCount(followerId),
+        };
+      }
+
+      // Remove follow relationship
+      await _supabase
+          .from('follows')
+          .delete()
+          .eq('follower_id', followerId)
+          .eq('following_id', followingId);
+
+      // Get updated counts
+      final followersCount = await getFollowersCount(followingId);
+      final followingCount = await getFollowingCount(followerId);
+
+      return {
+        'success': true,
+        'message': 'Successfully unfollowed user',
+        'followersCount': followersCount,
+        'followingCount': followingCount,
+      };
+    } catch (e) {
+      print('Error unfollowing user: $e');
+      return {
+        'success': false,
+        'message': 'Error unfollowing user: $e',
+        'followersCount': 0,
+        'followingCount': 0,
+      };
+    }
+  }
+
+  // Check if user is following another user
+  Future<bool> isFollowing(String followerId, String followingId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', followerId)
+          .eq('following_id', followingId)
+          .maybeSingle();
+      
+      return response != null;
+    } catch (e) {
+      print('Error checking follow status: $e');
+      return false;
+    }
+  }
+
+  // Get followers count
+  Future<int> getFollowersCount(String userId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('id')
+          .eq('following_id', userId);
+      
+      return response.length;
+    } catch (e) {
+      print('Error getting followers count: $e');
+      return 0;
+    }
+  }
+
+  // Get following count
+  Future<int> getFollowingCount(String userId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('id')
+          .eq('follower_id', userId);
+      
+      return response.length;
+    } catch (e) {
+      print('Error getting following count: $e');
+      return 0;
+    }
+  }
+
+  // Get user's followers
+  Future<List<Map<String, dynamic>>> getFollowers(String userId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('''
+            follower_id,
+            users!follows_follower_id_fkey(id, username, full_name, avatar_url)
+          ''')
+          .eq('following_id', userId);
+      
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error getting followers: $e');
+      return [];
+    }
+  }
+
+  // Get users that user is following
+  Future<List<Map<String, dynamic>>> getFollowing(String userId) async {
+    try {
+      final response = await _supabase
+          .from('follows')
+          .select('''
+            following_id,
+            users!follows_following_id_fkey(id, username, full_name, avatar_url)
+          ''')
+          .eq('follower_id', userId);
+      
+      return List<Map<String, dynamic>>.from(response);
+    } catch (e) {
+      print('Error getting following: $e');
+      return [];
+    }
+  }
+}

@@ -1,0 +1,2 @@
+C:/STAYMITHRA/stay_mithra/staymitra/android/app/.cxx/RelWithDebInfo/1y62231f/x86_64/CMakeFiles/edit_cache.dir
+C:/STAYMITHRA/stay_mithra/staymitra/android/app/.cxx/RelWithDebInfo/1y62231f/x86_64/CMakeFiles/rebuild_cache.dir

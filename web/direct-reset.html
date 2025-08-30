@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password - StayMithra</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #007F8C, #2D5948);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #2D5948;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .title h2 {
+            color: #2D5948;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .title p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D5948;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #007F8C;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #007F8C;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background: #006670;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .spinner {
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #007F8C;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .back-link a {
+            color: #007F8C;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>staymithra</h1>
+        </div>
+        
+        <div class="title">
+            <h2>Reset Your Password</h2>
+            <p>Enter your email and new password</p>
+        </div>
+        
+        <div id="message"></div>
+        
+        <form id="resetForm">
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" required placeholder="Enter your email address">
+            </div>
+            
+            <div class="form-group">
+                <label for="password">New Password</label>
+                <input type="password" id="password" name="password" required minlength="6" placeholder="Enter new password">
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmPassword">Confirm Password</label>
+                <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6" placeholder="Confirm new password">
+            </div>
+            
+            <button type="submit" class="btn" id="submitBtn">Update Password</button>
+        </form>
+        
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Updating your password...</p>
+        </div>
+        
+        <div class="back-link">
+            <a href="#" onclick="openApp()">Back to StayMithra App</a>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Supabase with service role for admin operations
+        const supabaseUrl = 'https://rssnqbqbrejnjeiukrdr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzc25xYnFicmVqbmplaXVrcmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTYyMzQsImV4cCI6MjA3MDgzMjIzNH0.DPX7FUSjueQ9ex3JTlsjhC78dq1kJY4VB7_2PQLKFGI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        // Pre-fill email if available from URL
+        window.addEventListener('load', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const email = urlParams.get('email');
+            if (email) {
+                document.getElementById('email').value = email;
+            }
+            
+            showMessage('Please enter your email and new password to reset your password.', 'info');
+        });
+
+        // Handle form submission
+        document.getElementById('resetForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value.trim();
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            
+            // Validate inputs
+            if (!email) {
+                showMessage('Please enter your email address', 'error');
+                return;
+            }
+            
+            if (!password || !confirmPassword) {
+                showMessage('Please enter both password fields', 'error');
+                return;
+            }
+            
+            if (password !== confirmPassword) {
+                showMessage('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (password.length < 6) {
+                showMessage('Password must be at least 6 characters long', 'error');
+                return;
+            }
+            
+            // Show loading
+            showLoading(true);
+            
+            try {
+                // First, try to sign in with a temporary password to check if user exists
+                showMessage('Verifying user account...', 'info');
+                
+                // Since we can't directly update password without authentication,
+                // we'll use a different approach - sign in and then update
+                
+                // Step 1: Try to sign in with the email (this will fail but tells us if user exists)
+                const { error: signInError } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: 'temporary_wrong_password'
+                });
+                
+                // If we get "Invalid login credentials", the user exists but password is wrong (expected)
+                // If we get "User not found" or similar, the user doesn't exist
+                
+                if (signInError && signInError.message.includes('Invalid login credentials')) {
+                    // User exists, now we need to use the reset token approach
+                    showMessage('User found. Requesting password reset...', 'info');
+                    
+                    // Request password reset
+                    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+                        redirectTo: `${window.location.origin}/direct-reset.html?email=${encodeURIComponent(email)}&temp=true`
+                    });
+                    
+                    if (resetError) {
+                        throw resetError;
+                    }
+                    
+                    showMessage('Password reset email sent! Please check your email and click the link to complete the password reset.', 'success');
+                    document.getElementById('resetForm').style.display = 'none';
+                    
+                } else if (signInError && (signInError.message.includes('User not found') || signInError.message.includes('Invalid'))) {
+                    showMessage('No account found with this email address. Please check your email or create a new account.', 'error');
+                } else {
+                    // Unexpected error
+                    throw signInError;
+                }
+                
+            } catch (error) {
+                console.error('Password reset error:', error);
+                showMessage('Error: ' + error.message, 'error');
+            } finally {
+                showLoading(false);
+            }
+        });
+
+        function showMessage(message, type) {
+            const messageDiv = document.getElementById('message');
+            messageDiv.innerHTML = `<div class="message ${type}">${message}</div>`;
+        }
+
+        function showLoading(show) {
+            const loading = document.getElementById('loading');
+            const submitBtn = document.getElementById('submitBtn');
+            
+            if (show) {
+                loading.style.display = 'block';
+                submitBtn.disabled = true;
+            } else {
+                loading.style.display = 'none';
+                submitBtn.disabled = false;
+            }
+        }
+
+        function openApp() {
+            // Try to open the mobile app
+            window.location.href = 'staymitra://login';
+            
+            // Fallback: show instructions
+            setTimeout(() => {
+                alert('Please open the StayMithra app and sign in with your email and new password.');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>

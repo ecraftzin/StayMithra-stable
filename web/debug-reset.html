@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Password Reset - StayMithra</title>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        .btn {
+            background: #007F8C;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #006670;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .debug-info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 12px;
+            margin-top: 10px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        .step {
+            padding: 10px;
+            margin: 5px 0;
+            border-left: 4px solid #007F8C;
+            background: #f8f9fa;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Password Reset</h1>
+    
+    <div class="section">
+        <h3>Current URL Analysis</h3>
+        <div id="urlAnalysis" class="debug-info"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Session Status</h3>
+        <div id="sessionStatus" class="debug-info"></div>
+        <button class="btn" onclick="checkSession()">🔄 Refresh Session</button>
+    </div>
+    
+    <div class="section">
+        <h3>Password Reset Form</h3>
+        <div id="resetStatus" class="debug-info">Ready to reset password...</div>
+        
+        <div class="form-group">
+            <label for="newPassword">New Password:</label>
+            <input type="password" id="newPassword" placeholder="Enter new password" minlength="6">
+        </div>
+        
+        <div class="form-group">
+            <label for="confirmPassword">Confirm Password:</label>
+            <input type="password" id="confirmPassword" placeholder="Confirm new password" minlength="6">
+        </div>
+        
+        <button class="btn" onclick="resetPassword()" id="resetBtn">🔑 Reset Password</button>
+    </div>
+    
+    <div class="section">
+        <h3>Debug Steps</h3>
+        <div id="debugSteps"></div>
+    </div>
+    
+    <div class="section">
+        <h3>Test Login After Reset</h3>
+        <div class="form-group">
+            <label for="testEmail">Email:</label>
+            <input type="email" id="testEmail" placeholder="Enter your email">
+        </div>
+        <button class="btn" onclick="testLogin()">🧪 Test Login</button>
+        <div id="loginResult" class="debug-info" style="margin-top: 10px;"></div>
+    </div>
+
+    <script>
+        // Initialize Supabase
+        const supabaseUrl = 'https://rssnqbqbrejnjeiukrdr.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJzc25xYnFicmVqbmplaXVrcmRyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTUyNTYyMzQsImV4cCI6MjA3MDgzMjIzNH0.DPX7FUSjueQ9ex3JTlsjhC78dq1kJY4VB7_2PQLKFGI';
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+        let debugSteps = [];
+        let currentUser = null;
+
+        function addDebugStep(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            debugSteps.push({ timestamp, message, type });
+            updateDebugSteps();
+        }
+
+        function updateDebugSteps() {
+            const stepsDiv = document.getElementById('debugSteps');
+            stepsDiv.innerHTML = debugSteps.map(step => 
+                `<div class="step ${step.type}">[${step.timestamp}] ${step.message}</div>`
+            ).join('');
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', async () => {
+            await analyzeUrl();
+            await initializeSession();
+        });
+
+        async function analyzeUrl() {
+            const urlInfo = {
+                fullUrl: window.location.href,
+                search: window.location.search,
+                hash: window.location.hash
+            };
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const hashParams = new URLSearchParams(window.location.hash.substring(1));
+
+            const code = urlParams.get('code') || hashParams.get('code');
+            const accessToken = hashParams.get('access_token') || urlParams.get('access_token');
+            const refreshToken = hashParams.get('refresh_token') || urlParams.get('refresh_token');
+            const type = hashParams.get('type') || urlParams.get('type');
+            const error = hashParams.get('error') || urlParams.get('error');
+
+            urlInfo.parameters = {
+                code: code || 'Not found',
+                accessToken: accessToken ? 'Present' : 'Not found',
+                refreshToken: refreshToken ? 'Present' : 'Not found',
+                type: type || 'Not found',
+                error: error || 'None'
+            };
+
+            document.getElementById('urlAnalysis').textContent = JSON.stringify(urlInfo, null, 2);
+            
+            if (code) {
+                addDebugStep(`Found auth code: ${code.substring(0, 8)}...`, 'success');
+            } else {
+                addDebugStep('No auth code found in URL', 'warning');
+            }
+        }
+
+        async function initializeSession() {
+            addDebugStep('Initializing session...', 'info');
+
+            const urlParams = new URLSearchParams(window.location.search);
+            const code = urlParams.get('code');
+
+            if (code) {
+                try {
+                    addDebugStep('Exchanging code for session...', 'info');
+                    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+
+                    if (error) {
+                        addDebugStep(`Code exchange failed: ${error.message}`, 'error');
+                        document.getElementById('resetStatus').innerHTML = 
+                            `<div class="error">Session setup failed: ${error.message}</div>`;
+                        return;
+                    }
+
+                    if (data.session && data.user) {
+                        currentUser = data.user;
+                        addDebugStep(`Session established for: ${data.user.email}`, 'success');
+                        document.getElementById('resetStatus').innerHTML = 
+                            `<div class="success">Ready to reset password for: ${data.user.email}</div>`;
+                        document.getElementById('testEmail').value = data.user.email;
+                    }
+                } catch (error) {
+                    addDebugStep(`Session initialization error: ${error.message}`, 'error');
+                }
+            }
+
+            await checkSession();
+        }
+
+        async function checkSession() {
+            try {
+                const { data: { session }, error } = await supabase.auth.getSession();
+
+                const sessionInfo = {
+                    hasSession: !!session,
+                    error: error?.message || 'None',
+                    user: session?.user ? {
+                        id: session.user.id,
+                        email: session.user.email,
+                        emailConfirmed: session.user.email_confirmed_at,
+                        lastSignIn: session.user.last_sign_in_at
+                    } : 'No user',
+                    session: session ? {
+                        expiresAt: session.expires_at,
+                        tokenType: session.token_type
+                    } : 'No session'
+                };
+
+                document.getElementById('sessionStatus').textContent = JSON.stringify(sessionInfo, null, 2);
+
+                if (session) {
+                    addDebugStep(`Session valid for: ${session.user?.email}`, 'success');
+                    currentUser = session.user;
+                } else {
+                    addDebugStep('No valid session found', 'warning');
+                }
+            } catch (error) {
+                addDebugStep(`Session check error: ${error.message}`, 'error');
+            }
+        }
+
+        async function resetPassword() {
+            const newPassword = document.getElementById('newPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+
+            if (!newPassword || !confirmPassword) {
+                addDebugStep('Please enter both password fields', 'error');
+                return;
+            }
+
+            if (newPassword !== confirmPassword) {
+                addDebugStep('Passwords do not match', 'error');
+                return;
+            }
+
+            if (newPassword.length < 6) {
+                addDebugStep('Password must be at least 6 characters', 'error');
+                return;
+            }
+
+            if (!currentUser) {
+                addDebugStep('No authenticated user found', 'error');
+                return;
+            }
+
+            document.getElementById('resetBtn').disabled = true;
+            addDebugStep(`Attempting to reset password for: ${currentUser.email}`, 'info');
+
+            try {
+                const { data, error } = await supabase.auth.updateUser({
+                    password: newPassword
+                });
+
+                if (error) {
+                    addDebugStep(`Password update failed: ${error.message}`, 'error');
+                    document.getElementById('resetStatus').innerHTML = 
+                        `<div class="error">Password update failed: ${error.message}</div>`;
+                } else {
+                    addDebugStep('Password updated successfully!', 'success');
+                    document.getElementById('resetStatus').innerHTML = 
+                        `<div class="success">Password updated successfully! You can now test login below.</div>`;
+                    
+                    // Clear password fields
+                    document.getElementById('newPassword').value = '';
+                    document.getElementById('confirmPassword').value = '';
+                }
+            } catch (error) {
+                addDebugStep(`Password update error: ${error.message}`, 'error');
+            } finally {
+                document.getElementById('resetBtn').disabled = false;
+            }
+        }
+
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('newPassword').value || 'test123'; // Use the password that was just set
+
+            if (!email) {
+                document.getElementById('loginResult').innerHTML = 
+                    '<div class="error">Please enter email address</div>';
+                return;
+            }
+
+            addDebugStep(`Testing login for: ${email}`, 'info');
+
+            try {
+                // Sign out first
+                await supabase.auth.signOut();
+                
+                // Try to sign in
+                const { data, error } = await supabase.auth.signInWithPassword({
+                    email: email,
+                    password: password
+                });
+
+                if (error) {
+                    addDebugStep(`Login test failed: ${error.message}`, 'error');
+                    document.getElementById('loginResult').innerHTML = 
+                        `<div class="error">Login failed: ${error.message}</div>`;
+                } else {
+                    addDebugStep('Login test successful!', 'success');
+                    document.getElementById('loginResult').innerHTML = 
+                        `<div class="success">Login successful! Credentials are working.</div>`;
+                }
+            } catch (error) {
+                addDebugStep(`Login test error: ${error.message}`, 'error');
+                document.getElementById('loginResult').innerHTML = 
+                    `<div class="error">Login error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

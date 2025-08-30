@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Inspector - StayMithra</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        .info {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 12px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .button {
+            background: #007F8C;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #006670;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Password Reset Link Inspector</h1>
+    
+    <div class="section">
+        <h3>📋 Instructions</h3>
+        <p>1. Request a password reset from your StayMithra app</p>
+        <p>2. Copy the reset link from your email</p>
+        <p>3. Paste it in the box below and click "Analyze Link"</p>
+    </div>
+    
+    <div class="section">
+        <h3>🔗 Paste Your Reset Link Here</h3>
+        <textarea id="linkInput" placeholder="Paste the password reset link from your email here..." style="width: 100%; height: 100px; padding: 10px; border: 1px solid #ddd; border-radius: 4px;"></textarea>
+        <br><br>
+        <button class="button" onclick="analyzeLink()">🔍 Analyze Link</button>
+        <button class="button" onclick="testLink()">🧪 Test Link</button>
+        <button class="button" onclick="clearResults()">🗑️ Clear</button>
+    </div>
+    
+    <div class="section">
+        <h3>📊 Current Page URL Analysis</h3>
+        <div id="currentUrl" class="info"></div>
+    </div>
+    
+    <div class="section">
+        <h3>🔍 Link Analysis Results</h3>
+        <div id="analysisResults" class="info">No link analyzed yet...</div>
+    </div>
+    
+    <div class="section">
+        <h3>🧪 Test Results</h3>
+        <div id="testResults" class="info">No test performed yet...</div>
+    </div>
+
+    <script>
+        // Analyze current page URL on load
+        window.addEventListener('load', () => {
+            analyzeCurrentUrl();
+        });
+
+        function analyzeCurrentUrl() {
+            const url = window.location.href;
+            const urlObj = new URL(url);
+            
+            const analysis = {
+                fullUrl: url,
+                origin: urlObj.origin,
+                pathname: urlObj.pathname,
+                search: urlObj.search,
+                hash: urlObj.hash,
+                searchParams: {},
+                hashParams: {}
+            };
+            
+            // Parse search parameters
+            urlObj.searchParams.forEach((value, key) => {
+                analysis.searchParams[key] = value;
+            });
+            
+            // Parse hash parameters
+            if (urlObj.hash) {
+                const hashParams = new URLSearchParams(urlObj.hash.substring(1));
+                hashParams.forEach((value, key) => {
+                    analysis.hashParams[key] = value;
+                });
+            }
+            
+            document.getElementById('currentUrl').textContent = JSON.stringify(analysis, null, 2);
+        }
+
+        function analyzeLink() {
+            const link = document.getElementById('linkInput').value.trim();
+            
+            if (!link) {
+                document.getElementById('analysisResults').innerHTML = '<div class="error">Please paste a link first!</div>';
+                return;
+            }
+            
+            try {
+                const urlObj = new URL(link);
+                
+                const analysis = {
+                    fullUrl: link,
+                    origin: urlObj.origin,
+                    pathname: urlObj.pathname,
+                    search: urlObj.search,
+                    hash: urlObj.hash,
+                    searchParams: {},
+                    hashParams: {},
+                    isValidResetLink: false,
+                    hasAuthTokens: false,
+                    authTokens: {}
+                };
+                
+                // Parse search parameters
+                urlObj.searchParams.forEach((value, key) => {
+                    analysis.searchParams[key] = value;
+                });
+                
+                // Parse hash parameters
+                if (urlObj.hash) {
+                    const hashParams = new URLSearchParams(urlObj.hash.substring(1));
+                    hashParams.forEach((value, key) => {
+                        analysis.hashParams[key] = value;
+                    });
+                }
+                
+                // Check for authentication tokens
+                const accessToken = analysis.hashParams.access_token || analysis.searchParams.access_token;
+                const refreshToken = analysis.hashParams.refresh_token || analysis.searchParams.refresh_token;
+                const type = analysis.hashParams.type || analysis.searchParams.type;
+                
+                if (accessToken || refreshToken || type) {
+                    analysis.hasAuthTokens = true;
+                    analysis.authTokens = {
+                        access_token: accessToken ? 'Present' : 'Missing',
+                        refresh_token: refreshToken ? 'Present' : 'Missing',
+                        type: type || 'Not specified'
+                    };
+                }
+                
+                // Check if it's a valid reset link
+                analysis.isValidResetLink = link.includes('reset-password') || link.includes('recovery');
+                
+                const resultClass = analysis.hasAuthTokens ? 'success' : 'warning';
+                document.getElementById('analysisResults').innerHTML = 
+                    `<div class="${resultClass}">${JSON.stringify(analysis, null, 2)}</div>`;
+                
+            } catch (error) {
+                document.getElementById('analysisResults').innerHTML = 
+                    `<div class="error">Error analyzing link: ${error.message}</div>`;
+            }
+        }
+
+        function testLink() {
+            const link = document.getElementById('linkInput').value.trim();
+            
+            if (!link) {
+                document.getElementById('testResults').innerHTML = '<div class="error">Please paste a link first!</div>';
+                return;
+            }
+            
+            // Open the link in a new tab for testing
+            window.open(link, '_blank');
+            
+            document.getElementById('testResults').innerHTML = 
+                '<div class="success">Link opened in new tab. Check if it works correctly.</div>';
+        }
+
+        function clearResults() {
+            document.getElementById('linkInput').value = '';
+            document.getElementById('analysisResults').textContent = 'No link analyzed yet...';
+            document.getElementById('testResults').textContent = 'No test performed yet...';
+        }
+    </script>
+</body>
+</html>
