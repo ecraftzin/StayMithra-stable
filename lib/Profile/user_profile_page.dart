@@ -389,7 +389,7 @@ class _UserProfilePageState extends State<UserProfilePage>
             Expanded(
               child: Container(
                 padding: EdgeInsets.only(
-                  bottom: context.responsiveHeight(0.1), // Add bottom padding for navigation bar
+                  bottom: context.responsiveHeight(0.15), // Increased bottom padding to prevent overflow with content
                 ),
                 child: TabBarView(
                   controller: _tabController,
@@ -580,7 +580,7 @@ class _UserProfilePageState extends State<UserProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
+        bottom: context.responsiveHeight(0.05), // Extra bottom padding for content grids
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -620,7 +620,7 @@ class _UserProfilePageState extends State<UserProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
+        bottom: context.responsiveHeight(0.05), // Extra bottom padding for content grids
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -663,7 +663,7 @@ class _UserProfilePageState extends State<UserProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
+        bottom: context.responsiveHeight(0.05), // Extra bottom padding for content grids
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,

@@ -243,7 +243,7 @@ class _ProfilePageState extends State<ProfilePage>
           ],
           body: Container(
             padding: EdgeInsets.only(
-              bottom: context.responsiveHeight(0.1), // Add bottom padding for navigation bar
+              bottom: context.responsiveHeight(0.15), // Increased bottom padding to prevent overflow with content
             ),
             child: TabBarView(
               controller: _tabController,
@@ -471,7 +471,7 @@ class _ProfilePageState extends State<ProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
+        bottom: context.responsiveHeight(0.05), // Extra bottom padding for content grids
       ),
       physics:
           const ClampingScrollPhysics(), // important inside NestedScrollView
@@ -500,7 +500,7 @@ class _ProfilePageState extends State<ProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
+        bottom: context.responsiveHeight(0.05), // Extra bottom padding for content grids
       ),
       physics: const ClampingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -531,7 +531,7 @@ class _ProfilePageState extends State<ProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
+        bottom: context.responsiveHeight(0.05), // Extra bottom padding for content grids
       ),
       physics: const ClampingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
