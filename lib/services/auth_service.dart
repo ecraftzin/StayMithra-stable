@@ -1,5 +1,4 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:flutter/foundation.dart';
 import '../config/supabase_config.dart';
 import '../models/user_model.dart';
 
@@ -278,29 +277,19 @@ class AuthService {
     }
   }
 
-  // Send OTP for password reset
+  // Send OTP for password reset using Supabase's built-in OTP
   Future<Map<String, dynamic>> sendPasswordResetOTP(String email) async {
     try {
-      // Generate a 6-digit OTP
-      final otp = _generateOTP();
+      // Use Supabase's built-in OTP functionality
+      await _supabase.auth.signInWithOtp(
+        email: email,
+        emailRedirectTo: 'staymitra://otp-verified',
+      );
 
-      // Store OTP in database with expiration (you'll need to create this table)
-      await _supabase.from('password_reset_otps').upsert({
-        'email': email,
-        'otp': otp,
-        'expires_at': DateTime.now().add(const Duration(minutes: 10)).toIso8601String(),
-        'created_at': DateTime.now().toIso8601String(),
-      });
-
-      // Send OTP via email (using Supabase Edge Functions or external email service)
-      // For now, we'll use a simple approach - you can enhance this later
-      await _sendOTPEmail(email, otp);
-
+      // OTP sent successfully
       return {
         'success': true,
         'message': 'Verification code sent to your email. Please check your inbox.',
-        'debug_otp': kDebugMode ? otp : null, // Only show OTP in debug mode
-        'debug_url': kDebugMode ? 'http://192.168.29.241:8000/otp-display.html?email=${Uri.encodeComponent(email)}' : null,
       };
     } catch (e) {
       return {
@@ -310,30 +299,29 @@ class AuthService {
     }
   }
 
-  // Verify OTP for password reset
+  // Verify OTP for password reset using Supabase's built-in verification
   Future<Map<String, dynamic>> verifyPasswordResetOTP(String email, String otp) async {
     try {
-      // Check if OTP exists and is valid
-      final response = await _supabase
-          .from('password_reset_otps')
-          .select()
-          .eq('email', email)
-          .eq('otp', otp)
-          .gt('expires_at', DateTime.now().toIso8601String())
-          .maybeSingle();
+      // Use Supabase's built-in OTP verification
+      final response = await _supabase.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.email,
+      );
 
-      if (response == null) {
+      if (response.session != null && response.user != null) {
+        return {
+          'success': true,
+          'message': 'Verification code verified successfully',
+          'session': response.session,
+          'user': response.user,
+        };
+      } else {
         return {
           'success': false,
           'message': 'Invalid or expired verification code',
         };
       }
-
-      return {
-        'success': true,
-        'message': 'Verification code verified successfully',
-        'token': otp, // Use OTP as token for password reset
-      };
     } catch (e) {
       return {
         'success': false,
@@ -342,43 +330,32 @@ class AuthService {
     }
   }
 
-  // Reset password with OTP
+  // Reset password with OTP (user is already authenticated after OTP verification)
   Future<Map<String, dynamic>> resetPasswordWithOTP(String email, String otp, String newPassword) async {
     try {
-      // Verify OTP is still valid
+      // First verify the OTP and get the authenticated session
       final otpVerification = await verifyPasswordResetOTP(email, otp);
       if (otpVerification['success'] != true) {
         return otpVerification;
       }
 
-      // Get user by email
-      final userResponse = await _supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', email)
-          .maybeSingle();
+      // At this point, the user should be authenticated via OTP verification
+      // Now we can update their password
+      final response = await _supabase.auth.updateUser(
+        UserAttributes(password: newPassword),
+      );
 
-      if (userResponse == null) {
+      if (response.user != null) {
+        return {
+          'success': true,
+          'message': 'Password updated successfully. You can now sign in with your new password.',
+        };
+      } else {
         return {
           'success': false,
-          'message': 'User not found',
+          'message': 'Failed to update password. Please try again.',
         };
       }
-
-      // Update password using admin API (you'll need service role key for this)
-      // For now, we'll use a workaround by temporarily signing in the user
-
-      // Delete the used OTP
-      await _supabase
-          .from('password_reset_otps')
-          .delete()
-          .eq('email', email)
-          .eq('otp', otp);
-
-      return {
-        'success': true,
-        'message': 'Password updated successfully. You can now sign in with your new password.',
-      };
     } catch (e) {
       return {
         'success': false,
@@ -387,39 +364,7 @@ class AuthService {
     }
   }
 
-  // Generate 6-digit OTP
-  String _generateOTP() {
-    final random = DateTime.now().millisecondsSinceEpoch;
-    return (random % 900000 + 100000).toString();
-  }
 
-  // Send OTP via email (placeholder - implement with your preferred email service)
-  Future<void> _sendOTPEmail(String email, String otp) async {
-    // For development and testing, we'll show the OTP in debug console
-    // In production, you should implement a proper email service
-
-    try {
-      // TODO: Implement proper email service (SendGrid, AWS SES, etc.)
-      // For now, we'll use a simple approach that works with Supabase
-
-      // Store the OTP information for the user to see (temporary solution)
-      debugPrint('=== PASSWORD RESET OTP ===');
-      debugPrint('Email: $email');
-      debugPrint('OTP Code: $otp');
-      debugPrint('Valid for: 10 minutes');
-      debugPrint('========================');
-
-      // You can replace this with actual email sending logic:
-      // await sendEmailWithSendGrid(email, otp);
-      // await sendEmailWithAWSSES(email, otp);
-      // await sendEmailWithCustomService(email, otp);
-
-    } catch (e) {
-      debugPrint('Email sending failed: $e');
-      // For development, still show the OTP in console
-      debugPrint('OTP for $email: $otp');
-    }
-  }
 
   // Listen to auth state changes
   Stream<AuthState> get authStateChanges => _supabase.auth.onAuthStateChange;

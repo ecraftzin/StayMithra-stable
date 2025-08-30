@@ -60,7 +60,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
               MaterialPageRoute(
                 builder: (context) => ResetPasswordPage(
                   email: widget.email,
-                  otpToken: result['token'] ?? _otpCode,
+                  otpToken: _otpCode,
                 ),
               ),
             );

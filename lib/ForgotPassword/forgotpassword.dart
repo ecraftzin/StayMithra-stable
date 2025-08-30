@@ -166,67 +166,16 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
 
         // If successful, navigate to OTP verification page
         if (result['success'] == true) {
-          // Show debug info in development mode
-          if (result['debug_otp'] != null) {
-            showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                title: const Text('🔧 Development Mode'),
-                content: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text('OTP sent! For testing purposes:'),
-                    const SizedBox(height: 10),
-                    Container(
-                      padding: const EdgeInsets.all(10),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Text(
-                        'OTP: ${result['debug_otp']}',
-                        style: const TextStyle(
-                          fontFamily: 'monospace',
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text('This dialog only appears in development mode.'),
-                  ],
+          await Future.delayed(const Duration(seconds: 1));
+          if (mounted) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => OTPVerificationPage(
+                  email: _emailController.text.trim(),
                 ),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => OTPVerificationPage(
-                            email: _emailController.text.trim(),
-                          ),
-                        ),
-                      );
-                    },
-                    child: const Text('Continue to OTP Verification'),
-                  ),
-                ],
               ),
             );
-          } else {
-            await Future.delayed(const Duration(seconds: 1));
-            if (mounted) {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => OTPVerificationPage(
-                    email: _emailController.text.trim(),
-                  ),
-                ),
-              );
-            }
           }
         }
       }
