@@ -3,7 +3,14 @@ import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/UserLogin/login.dart';
 
 class ResetPasswordPage extends StatefulWidget {
-  const ResetPasswordPage({super.key});
+  final String? email;
+  final String? otpToken;
+
+  const ResetPasswordPage({
+    super.key,
+    this.email,
+    this.otpToken,
+  });
 
   @override
   State<ResetPasswordPage> createState() => _ResetPasswordPageState();
@@ -31,8 +38,20 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await _authService.updatePassword(_passwordController.text.trim());
-      
+      Map<String, dynamic> result;
+
+      // Use OTP-based password reset if we have email and OTP token
+      if (widget.email != null && widget.otpToken != null) {
+        result = await _authService.resetPasswordWithOTP(
+          widget.email!,
+          widget.otpToken!,
+          _passwordController.text.trim(),
+        );
+      } else {
+        // Fallback to regular password update (for authenticated users)
+        result = await _authService.updatePassword(_passwordController.text.trim());
+      }
+
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -45,7 +64,7 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    result['message'] ?? 'Password updated',
+                    result['message'] ?? 'Password updated successfully',
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),

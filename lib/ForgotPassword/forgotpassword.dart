@@ -111,6 +111,7 @@
 import 'package:flutter/material.dart';
 import 'package:staymitra/UserLogin/login.dart';
 import 'package:staymitra/services/auth_service.dart';
+import 'package:staymitra/ForgotPassword/otp_verification_page.dart';
 
 class ForgotPasswordPage extends StatefulWidget {
   const ForgotPasswordPage({super.key});
@@ -131,13 +132,13 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
     super.dispose();
   }
 
-  Future<void> _resetPassword() async {
+  Future<void> _sendOTP() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
     try {
-      final result = await _authService.resetPassword(_emailController.text.trim());
+      final result = await _authService.sendPasswordResetOTP(_emailController.text.trim());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -151,7 +152,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    result['message'] ?? 'Password reset email sent',
+                    result['message'] ?? 'OTP sent to your email',
                     style: const TextStyle(color: Colors.white),
                   ),
                 ),
@@ -163,14 +164,69 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
           ),
         );
 
-        // If successful, navigate back to login after a delay
+        // If successful, navigate to OTP verification page
         if (result['success'] == true) {
-          await Future.delayed(const Duration(seconds: 2));
-          if (mounted) {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (context) => const SignInPage()),
+          // Show debug info in development mode
+          if (result['debug_otp'] != null) {
+            showDialog(
+              context: context,
+              builder: (context) => AlertDialog(
+                title: const Text('🔧 Development Mode'),
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text('OTP sent! For testing purposes:'),
+                    const SizedBox(height: 10),
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        'OTP: ${result['debug_otp']}',
+                        style: const TextStyle(
+                          fontFamily: 'monospace',
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    const Text('This dialog only appears in development mode.'),
+                  ],
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => OTPVerificationPage(
+                            email: _emailController.text.trim(),
+                          ),
+                        ),
+                      );
+                    },
+                    child: const Text('Continue to OTP Verification'),
+                  ),
+                ],
+              ),
             );
+          } else {
+            await Future.delayed(const Duration(seconds: 1));
+            if (mounted) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => OTPVerificationPage(
+                    email: _emailController.text.trim(),
+                  ),
+                ),
+              );
+            }
           }
         }
       }
@@ -240,7 +296,7 @@ class _ForgotPasswordPageState extends State<ForgotPasswordPage> {
               EmailInputField(controller: _emailController),
               SizedBox(height: size.height * 0.04),
               ResetPasswordButton(
-                onPressed: _resetPassword,
+                onPressed: _sendOTP,
                 isLoading: _isLoading,
               ),
               SizedBox(height: size.height * 0.02),
@@ -292,7 +348,7 @@ class ForgotPasswordText extends StatelessWidget {
         ),
         SizedBox(height: 8),
         Text(
-          'Enter your email account to reset your password',
+          'Enter your email to receive a verification code',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 14,
@@ -366,7 +422,7 @@ class ResetPasswordButton extends StatelessWidget {
               ),
             )
           : const Text(
-              'Reset Password',
+              'Send OTP',
               style: TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.bold,
