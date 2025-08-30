@@ -4,7 +4,9 @@ import 'package:image_picker/image_picker.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/services/user_service.dart';
 import 'package:staymitra/services/storage_service.dart';
+import 'package:staymitra/services/permission_service.dart';
 import 'package:staymitra/models/user_model.dart';
+import 'package:staymitra/utils/responsive_utils.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -89,6 +91,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _pickAndUploadPhoto() async {
     try {
+      // Request storage permissions first
+      final permissionService = PermissionService();
+      final hasPermissions = await permissionService.requestStoragePermissions();
+
+      if (!hasPermissions) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Storage permission is required to select photos',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 800,
@@ -163,46 +194,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  void _showPhotoOptions() {
-    showModalBottomSheet(
-      context: context,
-      builder: (BuildContext context) {
-        return SafeArea(
-          child: Wrap(
-            children: [
-              ListTile(
-                leading: const Icon(Icons.photo_library),
-                title: const Text('Choose from Gallery'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickAndUploadPhoto();
-                },
-              ),
-              if ((_currentUser?.avatarUrl != null &&
-                      _currentUser!.avatarUrl!.isNotEmpty) ||
-                  (_newAvatarUrl != null && _newAvatarUrl!.isNotEmpty))
-                ListTile(
-                  leading: const Icon(Icons.delete, color: Colors.red),
-                  title: const Text(
-                    'Remove Photo',
-                    style: TextStyle(color: Colors.red),
-                  ),
-                  onTap: () {
-                    Navigator.pop(context);
-                    _removePhoto();
-                  },
-                ),
-              ListTile(
-                leading: const Icon(Icons.cancel),
-                title: const Text('Cancel'),
-                onTap: () => Navigator.pop(context),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
+
 
   Future<void> _saveProfile() async {
     if (_isSaving) return;
@@ -255,11 +247,184 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  void _showPhotoOptions() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.symmetric(vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const Padding(
+                padding: EdgeInsets.all(16),
+                child: Text(
+                  'Profile Photo',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library, color: Color(0xFF007F8C)),
+                title: const Text('Choose from Gallery'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _pickAndUploadPhoto();
+                },
+              ),
+              ListTile(
+                leading: const Icon(Icons.camera_alt, color: Color(0xFF007F8C)),
+                title: const Text('Take Photo'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _takePhoto();
+                },
+              ),
+              if (_currentUser?.avatarUrl != null || _newAvatarUrl != null)
+                ListTile(
+                  leading: const Icon(Icons.delete, color: Colors.red),
+                  title: const Text('Remove Photo'),
+                  onTap: () {
+                    Navigator.pop(context);
+                    _removeProfilePic();
+                  },
+                ),
+              const SizedBox(height: 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _takePhoto() async {
+    try {
+      // Request camera permission first
+      final permissionService = PermissionService();
+      final hasPermission = await permissionService.requestCameraPermission();
+
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'Camera permission is required to take photos',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.camera,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
+
+      if (image == null) return;
+
+      setState(() => _isUploadingPhoto = true);
+
+      final avatarUrl = await _storageService.uploadImageFromXFile(
+        image,
+        'avatars',
+        folder: 'users',
+      );
+
+      if (!mounted) return;
+
+      if (avatarUrl != null) {
+        setState(() {
+          _newAvatarUrl = avatarUrl;
+          _removeProfilePicture = false;
+          _isUploadingPhoto = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Photo taken successfully!'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        setState(() => _isUploadingPhoto = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Failed to upload photo'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isUploadingPhoto = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error taking photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
   void _removeProfilePic() {
-    setState(() {
-      _removeProfilePicture = true;
-      _newAvatarUrl = null;
-    });
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Profile Photo'),
+        content: const Text('Are you sure you want to remove your profile photo?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              setState(() {
+                _removeProfilePicture = true;
+                _newAvatarUrl = null;
+              });
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text('Profile photo will be removed when you save'),
+                  backgroundColor: Colors.orange,
+                ),
+              );
+            },
+            child: const Text('Remove', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   String _getInitials() {

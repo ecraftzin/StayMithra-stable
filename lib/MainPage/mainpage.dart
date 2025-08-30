@@ -12,6 +12,7 @@ import 'package:staymitra/services/chat_service.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/models/user_model.dart';
 import 'package:staymitra/widgets/user_avatar.dart';
+import 'package:staymitra/utils/responsive_utils.dart';
 
 class MainPage extends StatefulWidget {
   const MainPage({super.key});
@@ -162,7 +163,8 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = context.screenWidth;
+    final screenHeight = context.screenHeight;
 
     return PopScope(
       canPop: false,
@@ -299,7 +301,7 @@ class _MainPageState extends State<MainPage> {
                 shape: const CircleBorder(),
                 child: Icon(
                   _currentIndex == 0 ? Icons.post_add : Icons.campaign,
-                  size: screenWidth * 0.07,
+                  size: context.responsiveIconSize(28), // Responsive icon size
                   color: Colors.white,
                 ),
               )

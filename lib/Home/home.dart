@@ -15,6 +15,7 @@ import 'package:staymitra/Comments/comments_page.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:timeago/timeago.dart' as timeago;
+import 'package:staymitra/utils/responsive_utils.dart';
 
 class StaymithraHomePage extends StatefulWidget {
   const StaymithraHomePage({super.key});
@@ -115,7 +116,7 @@ class _StaymithraHomePageState extends State<StaymithraHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
+    final screenWidth = context.screenWidth;
     return Scaffold(
       body: SafeArea(
         child: _isLoading
@@ -152,9 +153,11 @@ class _StaymithraHomePageState extends State<StaymithraHomePage> {
                       ),
                     )
                   : ListView.builder(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: screenWidth * 0.03,
-                        vertical: screenWidth * 0.02,
+                      padding: EdgeInsets.only(
+                        left: screenWidth * 0.03,
+                        right: screenWidth * 0.03,
+                        top: screenWidth * 0.02,
+                        bottom: context.responsiveHeight(0.12), // Add extra bottom padding to prevent overflow
                       ),
                       itemCount: _feedItems.length + (_isLoadingMore ? 1 : 0),
                       itemBuilder: (context, index) {
