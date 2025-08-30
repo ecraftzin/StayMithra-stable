@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reset Password - StayMithra</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #007F8C, #2D5948);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            width: 100%;
+            max-width: 400px;
+        }
+        
+        .logo {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .logo h1 {
+            color: #2D5948;
+            font-size: 32px;
+            font-weight: bold;
+        }
+        
+        .title {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .title h2 {
+            color: #2D5948;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .title p {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2D5948;
+            font-weight: 500;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e1e1e1;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #007F8C;
+        }
+        
+        .btn {
+            width: 100%;
+            padding: 15px;
+            background: #007F8C;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        
+        .btn:hover {
+            background: #006670;
+        }
+        
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .message.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .back-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .back-link a {
+            color: #007F8C;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .back-link a:hover {
+            text-decoration: underline;
+        }
+        
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            border-left: 4px solid #007F8C;
+        }
+        
+        .instructions h3 {
+            color: #2D5948;
+            margin-bottom: 10px;
+        }
+        
+        .instructions ol {
+            margin-left: 20px;
+        }
+        
+        .instructions li {
+            margin-bottom: 5px;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="logo">
+            <h1>staymithra</h1>
+        </div>
+        
+        <div class="title">
+            <h2>Password Reset Instructions</h2>
+            <p>Follow these steps to reset your password</p>
+        </div>
+        
+        <div class="instructions">
+            <h3>🔧 How to Reset Your Password:</h3>
+            <ol>
+                <li><strong>Open StayMithra app</strong> on your phone</li>
+                <li><strong>Go to "Forgot Password"</strong></li>
+                <li><strong>Enter email:</strong> <code>meenakshyyvp310@gmail.com</code> (with double 'y')</li>
+                <li><strong>Request password reset</strong></li>
+                <li><strong>Check your email</strong> for the reset link</li>
+                <li><strong>Click the reset link</strong> in the email</li>
+                <li><strong>Set your new password</strong></li>
+                <li><strong>Login to StayMithra</strong> with the correct email and new password</li>
+            </ol>
+        </div>
+        
+        <div class="message info">
+            <strong>Important:</strong> Make sure you use the correct email address: <br>
+            <code>meenakshyyvp310@gmail.com</code> (with double 'y')
+        </div>
+        
+        <div class="message error">
+            <strong>Common Issue:</strong> If you get "Invalid credentials" when logging in, make sure you're using the exact email address that's in your account: <code>meenakshyyvp310@gmail.com</code>
+        </div>
+        
+        <div class="back-link">
+            <a href="#" onclick="openApp()">Open StayMithra App</a>
+        </div>
+        
+        <div class="back-link">
+            <a href="http://192.168.29.241:8000/login-test.html">Test Your Login Credentials</a>
+        </div>
+    </div>
+
+    <script>
+        function openApp() {
+            // Try to open the mobile app
+            window.location.href = 'staymitra://login';
+            
+            // Fallback: show instructions
+            setTimeout(() => {
+                alert('Please open the StayMithra app manually and go to the login screen.');
+            }, 1000);
+        }
+    </script>
+</body>
+</html>
