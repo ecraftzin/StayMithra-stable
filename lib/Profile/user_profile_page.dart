@@ -387,13 +387,18 @@ class _UserProfilePageState extends State<UserProfilePage>
           children: [
             _buildTabBar(),
             Expanded(
-              child: TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildAllContentGrid(),
-                  _buildPostsGrid(),
-                  _buildCampaignsGrid(),
-                ],
+              child: Container(
+                padding: EdgeInsets.only(
+                  bottom: context.responsiveHeight(0.1), // Add bottom padding for navigation bar
+                ),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    _buildAllContentGrid(),
+                    _buildPostsGrid(),
+                    _buildCampaignsGrid(),
+                  ],
+                ),
               ),
             ),
           ],
@@ -575,7 +580,7 @@ class _UserProfilePageState extends State<UserProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -615,7 +620,7 @@ class _UserProfilePageState extends State<UserProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -658,7 +663,7 @@ class _UserProfilePageState extends State<UserProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
       ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,

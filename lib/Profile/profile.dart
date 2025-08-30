@@ -240,13 +240,18 @@ class _ProfilePageState extends State<ProfilePage>
               delegate: _TabBarDelegate(_buildTabBar()),
             ),
           ],
-          body: TabBarView(
-            controller: _tabController,
-            children: [
-              _buildMixedGrid(),
-              _buildPostsGrid(),
-              _buildCampaignsGrid(),
-            ],
+          body: Container(
+            padding: EdgeInsets.only(
+              bottom: context.responsiveHeight(0.1), // Add bottom padding for navigation bar
+            ),
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                _buildMixedGrid(),
+                _buildPostsGrid(),
+                _buildCampaignsGrid(),
+              ],
+            ),
           ),
         ),
       ),
@@ -446,7 +451,7 @@ class _ProfilePageState extends State<ProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
       ),
       physics:
           const ClampingScrollPhysics(), // important inside NestedScrollView
@@ -475,7 +480,7 @@ class _ProfilePageState extends State<ProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
       ),
       physics: const ClampingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -506,7 +511,7 @@ class _ProfilePageState extends State<ProfilePage>
         left: context.responsiveWidth(0.02),
         right: context.responsiveWidth(0.02),
         top: context.responsiveWidth(0.02),
-        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+        bottom: context.responsiveWidth(0.02), // Normal padding since TabBarView handles bottom spacing
       ),
       physics: const ClampingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
