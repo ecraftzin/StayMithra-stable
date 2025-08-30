@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:staymitra/services/post_service.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/services/storage_service.dart';
+import 'package:staymitra/services/first_time_permission_service.dart';
 
 class CreatePostPage extends StatefulWidget {
   const CreatePostPage({super.key});
@@ -33,6 +34,15 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
   Future<void> _pickImages() async {
     try {
+      // Request storage permissions with first-time handling
+      final firstTimePermissionService = FirstTimePermissionService();
+      final hasPermissions = await firstTimePermissionService.requestStoragePermissionsFirstTime(context);
+
+      if (!hasPermissions) {
+        // Permission service already handles user feedback
+        return;
+      }
+
       final List<XFile> images = await _imagePicker.pickMultiImage();
       if (images.isNotEmpty) {
         setState(() {
@@ -44,12 +54,14 @@ class _CreatePostPageState extends State<CreatePostPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking images: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking images: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

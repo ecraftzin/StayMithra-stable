@@ -5,6 +5,7 @@ import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/services/user_service.dart';
 import 'package:staymitra/services/storage_service.dart';
 import 'package:staymitra/services/permission_service.dart';
+import 'package:staymitra/services/first_time_permission_service.dart';
 import 'package:staymitra/models/user_model.dart';
 import 'package:staymitra/utils/responsive_utils.dart';
 
@@ -117,32 +118,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _pickAndUploadPhoto() async {
     try {
-      // Request storage permissions first
-      final permissionService = PermissionService();
-      final hasPermissions = await permissionService.requestStoragePermissions();
+      // Request storage permissions with first-time handling
+      final firstTimePermissionService = FirstTimePermissionService();
+      final hasPermissions = await firstTimePermissionService.requestStoragePermissionsFirstTime(context);
 
       if (!hasPermissions) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.warning, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Storage permission is required to select photos',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 4),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        // Permission service already handles user feedback
         return;
       }
 
@@ -340,32 +321,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _takePhoto() async {
     try {
-      // Request camera permission first
-      final permissionService = PermissionService();
-      final hasPermission = await permissionService.requestCameraPermission();
+      // Request camera permission with first-time handling
+      final firstTimePermissionService = FirstTimePermissionService();
+      final hasPermission = await firstTimePermissionService.requestCameraPermissionsFirstTime(context);
 
       if (!hasPermission) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.warning, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Camera permission is required to take photos',
-                      style: TextStyle(color: Colors.white),
-                    ),
-                  ),
-                ],
-              ),
-              backgroundColor: Colors.orange,
-              duration: Duration(seconds: 4),
-              behavior: SnackBarBehavior.floating,
-            ),
-          );
-        }
+        // Permission service already handles user feedback
         return;
       }
 
