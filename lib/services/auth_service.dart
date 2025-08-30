@@ -280,16 +280,16 @@ class AuthService {
   // Send OTP for password reset using Supabase's built-in OTP
   Future<Map<String, dynamic>> sendPasswordResetOTP(String email) async {
     try {
-      // Use Supabase's built-in OTP functionality
+      // Use Supabase's OTP functionality with email OTP type (not magic link)
       await _supabase.auth.signInWithOtp(
         email: email,
-        emailRedirectTo: 'staymitra://otp-verified',
+        shouldCreateUser: false, // Don't create new users for password reset
       );
 
       // OTP sent successfully
       return {
         'success': true,
-        'message': 'Verification code sent to your email. Please check your inbox.',
+        'message': 'A 6-digit verification code has been sent to your email. Please check your inbox.',
       };
     } catch (e) {
       return {
