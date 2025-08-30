@@ -11,6 +11,7 @@ import 'package:staymitra/models/post_model.dart';
 import 'package:staymitra/models/campaign_model.dart';
 import 'package:staymitra/ChatPage/real_chat_screen.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:staymitra/utils/responsive_utils.dart';
 
 class UserProfilePage extends StatefulWidget {
   final String userId;
@@ -570,7 +571,12 @@ class _UserProfilePageState extends State<UserProfilePage>
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.only(
+        left: context.responsiveWidth(0.02),
+        right: context.responsiveWidth(0.02),
+        top: context.responsiveWidth(0.02),
+        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 4,
@@ -605,7 +611,12 @@ class _UserProfilePageState extends State<UserProfilePage>
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.only(
+        left: context.responsiveWidth(0.02),
+        right: context.responsiveWidth(0.02),
+        top: context.responsiveWidth(0.02),
+        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 4,
@@ -643,7 +654,12 @@ class _UserProfilePageState extends State<UserProfilePage>
     }
 
     return GridView.builder(
-      padding: const EdgeInsets.all(8),
+      padding: EdgeInsets.only(
+        left: context.responsiveWidth(0.02),
+        right: context.responsiveWidth(0.02),
+        top: context.responsiveWidth(0.02),
+        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+      ),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
         crossAxisSpacing: 4,

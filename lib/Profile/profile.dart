@@ -15,6 +15,7 @@ import 'package:staymitra/models/user_model.dart';
 import 'package:staymitra/models/post_model.dart';
 import 'package:staymitra/models/campaign_model.dart';
 import 'package:staymitra/widgets/user_avatar.dart';
+import 'package:staymitra/utils/responsive_utils.dart';
 
 import 'package:staymitra/Posts/post_detail_page.dart';
 import 'package:staymitra/Campaigns/campaign_detail_page.dart';
@@ -441,7 +442,12 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     return GridView.builder(
-      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
+      padding: EdgeInsets.only(
+        left: context.responsiveWidth(0.02),
+        right: context.responsiveWidth(0.02),
+        top: context.responsiveWidth(0.02),
+        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+      ),
       physics:
           const ClampingScrollPhysics(), // important inside NestedScrollView
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -465,7 +471,12 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     return GridView.builder(
-      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
+      padding: EdgeInsets.only(
+        left: context.responsiveWidth(0.02),
+        right: context.responsiveWidth(0.02),
+        top: context.responsiveWidth(0.02),
+        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+      ),
       physics: const ClampingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
@@ -491,7 +502,12 @@ class _ProfilePageState extends State<ProfilePage>
     }
 
     return GridView.builder(
-      padding: EdgeInsets.all(MediaQuery.of(context).size.width * 0.02),
+      padding: EdgeInsets.only(
+        left: context.responsiveWidth(0.02),
+        right: context.responsiveWidth(0.02),
+        top: context.responsiveWidth(0.02),
+        bottom: context.responsiveHeight(0.12), // Extra bottom padding to prevent overflow
+      ),
       physics: const ClampingScrollPhysics(),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 3,
