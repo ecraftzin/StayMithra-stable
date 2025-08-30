@@ -330,22 +330,29 @@ class AuthService {
     }
   }
 
-  // Reset password with OTP (user is already authenticated after OTP verification)
+  // Reset password with OTP (user should be authenticated after OTP verification)
   Future<Map<String, dynamic>> resetPasswordWithOTP(String email, String otp, String newPassword) async {
     try {
-      // First verify the OTP and get the authenticated session
-      final otpVerification = await verifyPasswordResetOTP(email, otp);
-      if (otpVerification['success'] != true) {
-        return otpVerification;
+      // Verify OTP and authenticate user in one step
+      final otpResponse = await _supabase.auth.verifyOTP(
+        email: email,
+        token: otp,
+        type: OtpType.email,
+      );
+
+      if (otpResponse.session == null || otpResponse.user == null) {
+        return {
+          'success': false,
+          'message': 'Invalid or expired verification code. Please try again.',
+        };
       }
 
-      // At this point, the user should be authenticated via OTP verification
-      // Now we can update their password
-      final response = await _supabase.auth.updateUser(
+      // Now that user is authenticated, update their password
+      final updateResponse = await _supabase.auth.updateUser(
         UserAttributes(password: newPassword),
       );
 
-      if (response.user != null) {
+      if (updateResponse.user != null) {
         return {
           'success': true,
           'message': 'Password updated successfully. You can now sign in with your new password.',

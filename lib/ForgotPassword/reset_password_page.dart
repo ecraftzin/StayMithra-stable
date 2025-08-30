@@ -38,19 +38,9 @@ class _ResetPasswordPageState extends State<ResetPasswordPage> {
     setState(() => _isLoading = true);
 
     try {
-      Map<String, dynamic> result;
-
-      // Use OTP-based password reset if we have email and OTP token
-      if (widget.email != null && widget.otpToken != null) {
-        result = await _authService.resetPasswordWithOTP(
-          widget.email!,
-          widget.otpToken!,
-          _passwordController.text.trim(),
-        );
-      } else {
-        // Fallback to regular password update (for authenticated users)
-        result = await _authService.updatePassword(_passwordController.text.trim());
-      }
+      // Since user is already authenticated via OTP verification,
+      // we can directly update their password
+      final result = await _authService.updatePassword(_passwordController.text.trim());
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

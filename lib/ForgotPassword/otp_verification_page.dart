@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/ForgotPassword/reset_password_page.dart';
 import 'package:staymitra/UserLogin/login.dart';
+import 'package:staymitra/config/supabase_config.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class OTPVerificationPage extends StatefulWidget {
   final String email;
@@ -47,13 +49,18 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
     setState(() => _isLoading = true);
 
     try {
-      final result = await _authService.verifyPasswordResetOTP(widget.email, _otpCode);
+      // Directly verify OTP with Supabase and authenticate user
+      final response = await supabase.auth.verifyOTP(
+        email: widget.email,
+        token: _otpCode,
+        type: OtpType.email,
+      );
 
       if (mounted) {
-        if (result['success'] == true) {
+        if (response.session != null && response.user != null) {
           _showMessage('OTP verified successfully!', true);
           await Future.delayed(const Duration(seconds: 1));
-          
+
           if (mounted) {
             Navigator.pushReplacement(
               context,
@@ -66,7 +73,7 @@ class _OTPVerificationPageState extends State<OTPVerificationPage> {
             );
           }
         } else {
-          _showMessage(result['message'] ?? 'Invalid OTP. Please try again.', false);
+          _showMessage('Invalid or expired OTP. Please try again.', false);
         }
       }
     } catch (e) {
