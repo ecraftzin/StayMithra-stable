@@ -55,6 +55,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Future<void> _loadUserData() async {
+    setState(() => _isLoading = true);
+
     try {
       final currentUser = _authService.currentUser;
       if (currentUser != null) {
@@ -63,16 +65,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
         if (userProfile != null) {
           setState(() {
             _currentUser = userProfile;
+            // Populate all form fields with complete user data
             _usernameController.text = userProfile.username;
             _emailController.text = userProfile.email;
             _fullNameController.text = userProfile.fullName ?? '';
             _locationController.text = userProfile.location ?? '';
             _bioController.text = userProfile.bio ?? '';
             _websiteController.text = userProfile.website ?? '';
+
+            // Reset photo states
+            _removeProfilePicture = false;
+            _newAvatarUrl = null;
             _isLoading = false;
           });
         } else {
-          setState(() => _isLoading = false);
+          // If profile is null, populate with auth user data
+          setState(() {
+            _emailController.text = currentUser.email ?? '';
+            _usernameController.text = currentUser.userMetadata?['username'] ?? '';
+            _fullNameController.text = currentUser.userMetadata?['full_name'] ?? '';
+            _isLoading = false;
+          });
         }
       } else {
         if (mounted) setState(() => _isLoading = false);
@@ -82,8 +95,21 @@ class _EditProfilePageState extends State<EditProfilePage> {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Error loading profile: $e'),
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  'Error loading profile: $e',
+                  style: const TextStyle(color: Colors.white),
+                ),
+              ),
+            ],
+          ),
           backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+          behavior: SnackBarBehavior.floating,
         ),
       );
     }
