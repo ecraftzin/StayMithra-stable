@@ -16,6 +16,7 @@ import 'package:staymitra/models/post_model.dart';
 import 'package:staymitra/models/campaign_model.dart';
 import 'package:staymitra/widgets/user_avatar.dart';
 import 'package:staymitra/utils/responsive_utils.dart';
+import 'package:staymitra/utils/permission_test_helper.dart';
 
 import 'package:staymitra/Posts/post_detail_page.dart';
 import 'package:staymitra/Campaigns/campaign_detail_page.dart';
@@ -278,9 +279,15 @@ class _ProfilePageState extends State<ProfilePage>
           mainAxisSize: MainAxisSize.min,
           children: [
             SizedBox(height: screenHeight * 0.01),
-            ProfileUserAvatar(
-              user: _currentUser,
-              size: screenWidth * 0.24, // diameter = radius * 2
+            GestureDetector(
+              onLongPress: () {
+                // Debug: Show permission testing dialog
+                PermissionTestHelper.showPermissionTestDialog(context);
+              },
+              child: ProfileUserAvatar(
+                user: _currentUser,
+                size: screenWidth * 0.24, // diameter = radius * 2
+              ),
             ),
             SizedBox(height: screenHeight * 0.008),
             Text(
@@ -384,7 +391,20 @@ class _ProfilePageState extends State<ProfilePage>
                     Expanded(
                       child: _ProfileStat(
                         title: "Posts",
-                        count: "${_userPosts.length + _userCampaigns.length}",
+                        count: "${_userPosts.length}",
+                      ),
+                    ),
+                    SizedBox(
+                      height: 24,
+                      child: VerticalDivider(
+                        thickness: 1,
+                        color: Colors.black12,
+                      ),
+                    ),
+                    Expanded(
+                      child: _ProfileStat(
+                        title: "Campaigns",
+                        count: "${_userCampaigns.length}",
                       ),
                     ),
                     SizedBox(

@@ -49,16 +49,17 @@ class _StaymithraHomePageState extends State<StaymithraHomePage> {
   Future<void> _createSampleDataIfNeeded() async {
     final currentUser = _authService.currentUser;
     if (currentUser != null && !_hasCreatedSampleData) {
-      // Test Supabase connection and storage
+      // Test Supabase connection and storage (for debugging only)
       await DebugService().testSupabaseConnection();
       await DebugService().testImageUpload();
 
-      // Only create sample campaigns (not posts without images)
-      await _feedService.createSampleCampaigns(currentUser.id);
+      // DO NOT create sample data for new users - let them start fresh
+      // Sample data creation removed to prevent fake post counts
+
       if (mounted) {
         setState(() => _hasCreatedSampleData = true);
       }
-      // Refresh feed after creating sample data
+      // Load actual user feed (should be empty for new users)
       _loadFeed(refresh: true);
     }
   }

@@ -46,8 +46,10 @@ class FeedService {
     }
   }
 
-  // Create sample posts for testing
+  // Create sample posts for testing - DISABLED to prevent fake data for new users
   Future<void> createSamplePosts(String userId) async {
+    // DISABLED: Sample data creation removed to prevent fake post counts for new users
+    return;
     final samplePosts = [
       {
         'content':
@@ -88,8 +90,10 @@ class FeedService {
     }
   }
 
-  // Create sample campaigns for testing
+  // Create sample campaigns for testing - DISABLED to prevent fake data for new users
   Future<void> createSampleCampaigns(String userId) async {
+    // DISABLED: Sample data creation removed to prevent fake post counts for new users
+    return;
     final sampleCampaigns = [
       {
         'title': 'Weekend Trek to Nandi Hills',
