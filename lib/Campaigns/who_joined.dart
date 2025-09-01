@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:staymitra/services/campaign_service.dart';
+import 'package:staymitra/Profile/user_profile_page.dart';
 
 class CampaignParticipantsPage extends StatefulWidget {
   final String campaignId;
@@ -168,6 +169,7 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
             final userData = participant['users'] as Map<String, dynamic>?;
 
             return _ParticipantCard(
+              userId: userData?['id'] ?? participant['user_id'],
               name: userData?['full_name'] ?? 'Unknown User',
               username: '@${userData?['username'] ?? 'unknown'}',
               avatarUrl: userData?['avatar_url'],
@@ -182,6 +184,7 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
 }
 
 class _ParticipantCard extends StatelessWidget {
+  final String userId;
   final String name;
   final String username;
   final String? avatarUrl;
@@ -189,6 +192,7 @@ class _ParticipantCard extends StatelessWidget {
   final DateTime joinedDate;
 
   const _ParticipantCard({
+    required this.userId,
     required this.name,
     required this.username,
     this.avatarUrl,
@@ -202,9 +206,20 @@ class _ParticipantCard extends StatelessWidget {
       color: Colors.white,
       borderRadius: BorderRadius.circular(16),
       elevation: 2,
+      shadowColor: Colors.black.withValues(alpha: 0.1),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () {}, // tap effect only
+        onTap: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => UserProfilePage(
+                userId: userId,
+                userName: name,
+              ),
+            ),
+          );
+        },
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Column(
@@ -275,6 +290,22 @@ class _ParticipantCard extends StatelessWidget {
                   color: Colors.grey[500],
                 ),
                 textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 4),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF007F8C).withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  'View Profile',
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: const Color(0xFF007F8C),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ),
             ],
           ),
