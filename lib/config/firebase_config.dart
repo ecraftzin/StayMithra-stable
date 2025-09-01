@@ -1,15 +1,15 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 
 class FirebaseConfig {
   static Future<void> initialize() async {
     await Firebase.initializeApp();
   }
-  
+
   // Firebase Auth instance
-  static FirebaseAuth get auth => FirebaseAuth.instance;
-  
+  static firebase_auth.FirebaseAuth get auth => firebase_auth.FirebaseAuth.instance;
+
   // Google Sign In instance
   static GoogleSignIn get googleSignIn => GoogleSignIn(
     // Use the client ID from your google-services.json
@@ -18,5 +18,5 @@ class FirebaseConfig {
 }
 
 // Global Firebase Auth instance
-final firebaseAuth = FirebaseAuth.instance;
+final firebaseAuth = firebase_auth.FirebaseAuth.instance;
 final googleSignIn = GoogleSignIn();

@@ -1,4 +1,4 @@
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/firebase_config.dart';
@@ -10,12 +10,12 @@ class FirebaseAuthService {
   factory FirebaseAuthService() => _instance;
   FirebaseAuthService._internal();
 
-  final FirebaseAuth _firebaseAuth = FirebaseConfig.auth;
+  final firebase_auth.FirebaseAuth _firebaseAuth = FirebaseConfig.auth;
   final GoogleSignIn _googleSignIn = FirebaseConfig.googleSignIn;
   final SupabaseClient _supabase = supabase;
 
   // Get current Firebase user
-  User? get currentFirebaseUser => _firebaseAuth.currentUser;
+  firebase_auth.User? get currentFirebaseUser => _firebaseAuth.currentUser;
 
   // Check if user is logged in
   bool get isLoggedIn => currentFirebaseUser != null;
@@ -55,14 +55,14 @@ class FirebaseAuthService {
       final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
 
       // Create a new credential
-      final credential = GoogleAuthProvider.credential(
+      final credential = firebase_auth.GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
       // Sign in to Firebase with the Google credential
-      final UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
-      final User? firebaseUser = userCredential.user;
+      final firebase_auth.UserCredential userCredential = await _firebaseAuth.signInWithCredential(credential);
+      final firebase_auth.User? firebaseUser = userCredential.user;
 
       if (firebaseUser != null) {
         // Create or update user profile in Supabase
@@ -89,7 +89,7 @@ class FirebaseAuthService {
   }
 
   // Create or update user profile in Supabase
-  Future<void> _createOrUpdateUserProfile(User firebaseUser) async {
+  Future<void> _createOrUpdateUserProfile(firebase_auth.User firebaseUser) async {
     try {
       // Check if user already exists
       final existingUser = await _supabase
@@ -178,5 +178,5 @@ class FirebaseAuthService {
   }
 
   // Get auth state stream
-  Stream<User?> get authStateChanges => _firebaseAuth.authStateChanges();
+  Stream<firebase_auth.User?> get authStateChanges => _firebaseAuth.authStateChanges();
 }
