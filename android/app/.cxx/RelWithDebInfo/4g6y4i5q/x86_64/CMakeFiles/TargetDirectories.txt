@@ -1,2 +1,2 @@
-C:/STAYMITHRA/stay_mithra/staymitra/android/app/.cxx/RelWithDebInfo/4g6y4i5q/x86_64/CMakeFiles/edit_cache.dir
-C:/STAYMITHRA/stay_mithra/staymitra/android/app/.cxx/RelWithDebInfo/4g6y4i5q/x86_64/CMakeFiles/rebuild_cache.dir
+E:/meenakshy/staymithra30082025/android/app/.cxx/RelWithDebInfo/4g6y4i5q/x86_64/CMakeFiles/edit_cache.dir
+E:/meenakshy/staymithra30082025/android/app/.cxx/RelWithDebInfo/4g6y4i5q/x86_64/CMakeFiles/rebuild_cache.dir

@@ -9,10 +9,10 @@
 -DCMAKE_ANDROID_NDK=C:\Users\User\AppData\Local\Android\sdk\ndk\27.0.12077973
 -DCMAKE_TOOLCHAIN_FILE=C:\Users\User\AppData\Local\Android\sdk\ndk\27.0.12077973\build\cmake\android.toolchain.cmake
 -DCMAKE_MAKE_PROGRAM=C:\Users\User\AppData\Local\Android\sdk\cmake\3.22.1\bin\ninja.exe
--DCMAKE_LIBRARY_OUTPUT_DIRECTORY=C:\STAYMITHRA\stay_mithra\staymitra\android\app\build\intermediates\cxx\RelWithDebInfo\4g6y4i5q\obj\x86_64
--DCMAKE_RUNTIME_OUTPUT_DIRECTORY=C:\STAYMITHRA\stay_mithra\staymitra\android\app\build\intermediates\cxx\RelWithDebInfo\4g6y4i5q\obj\x86_64
+-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=E:\meenakshy\staymithra30082025\android\app\build\intermediates\cxx\RelWithDebInfo\4g6y4i5q\obj\x86_64
+-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=E:\meenakshy\staymithra30082025\android\app\build\intermediates\cxx\RelWithDebInfo\4g6y4i5q\obj\x86_64
 -DCMAKE_BUILD_TYPE=RelWithDebInfo
--BC:\STAYMITHRA\stay_mithra\staymitra\android\app\.cxx\RelWithDebInfo\4g6y4i5q\x86_64
+-BE:\meenakshy\staymithra30082025\android\app\.cxx\RelWithDebInfo\4g6y4i5q\x86_64
 -GNinja
 -Wno-dev
 --no-warn-unused-cli

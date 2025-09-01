@@ -4,6 +4,7 @@ import 'package:staymitra/SplashScreen/getstarted.dart';
 import 'package:staymitra/UserLogin/login.dart';
 import 'package:staymitra/UserSIgnUp/email_verified_page.dart';
 import 'package:staymitra/config/supabase_config.dart';
+import 'package:staymitra/config/firebase_config.dart';
 import 'package:staymitra/auth/auth_wrapper.dart';
 import 'package:staymitra/services/storage_service.dart';
 import 'package:staymitra/services/migration_service.dart';
@@ -13,6 +14,9 @@ import 'package:staymitra/ForgotPassword/reset_password_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize Firebase
+  await FirebaseConfig.initialize();
 
   // Initialize Supabase
   await SupabaseConfig.initialize();

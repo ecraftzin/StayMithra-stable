@@ -11,7 +11,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "arm64-v8a"
+			"value" : "armeabi-v7a"
 		},
 		{
 			"name" : "ANDROID_NDK",
@@ -63,7 +63,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "arm64-v8a"
+			"value" : "armeabi-v7a"
 		},
 		{
 			"name" : "CMAKE_ANDROID_NDK",
@@ -151,7 +151,7 @@
 				}
 			],
 			"type" : "INTERNAL",
-			"value" : "c:/STAYMITHRA/stay_mithra/staymitra/android/app/.cxx/RelWithDebInfo/4g6y4i5q/arm64-v8a"
+			"value" : "e:/meenakshy/staymithra30082025/android/app/.cxx/RelWithDebInfo/4g6y4i5q/armeabi-v7a"
 		},
 		{
 			"name" : "CMAKE_CACHE_MAJOR_VERSION",
@@ -751,7 +751,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\STAYMITHRA\\stay_mithra\\staymitra\\android\\app\\build\\intermediates\\cxx\\RelWithDebInfo\\4g6y4i5q\\obj\\arm64-v8a"
+			"value" : "E:\\meenakshy\\staymithra30082025\\android\\app\\build\\intermediates\\cxx\\RelWithDebInfo\\4g6y4i5q\\obj\\armeabi-v7a"
 		},
 		{
 			"name" : "CMAKE_LINKER",
@@ -1023,7 +1023,7 @@
 				}
 			],
 			"type" : "UNINITIALIZED",
-			"value" : "C:\\STAYMITHRA\\stay_mithra\\staymitra\\android\\app\\build\\intermediates\\cxx\\RelWithDebInfo\\4g6y4i5q\\obj\\arm64-v8a"
+			"value" : "E:\\meenakshy\\staymithra30082025\\android\\app\\build\\intermediates\\cxx\\RelWithDebInfo\\4g6y4i5q\\obj\\armeabi-v7a"
 		},
 		{
 			"name" : "CMAKE_SHARED_LINKER_FLAGS",
@@ -1331,7 +1331,7 @@
 				}
 			],
 			"type" : "STATIC",
-			"value" : "C:/STAYMITHRA/stay_mithra/staymitra/android/app/.cxx/RelWithDebInfo/4g6y4i5q/arm64-v8a"
+			"value" : "E:/meenakshy/staymithra30082025/android/app/.cxx/RelWithDebInfo/4g6y4i5q/armeabi-v7a"
 		},
 		{
 			"name" : "Project_IS_TOP_LEVEL",

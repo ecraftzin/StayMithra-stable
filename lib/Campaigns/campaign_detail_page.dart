@@ -411,7 +411,7 @@ class _CampaignDetailPageState extends State<CampaignDetailPage> {
                       ),
                     );
                   },
-                  icon: const Icon(Icons.verified_user_sharp),
+                  icon: const Icon(Icons.groups),
                 ),
               ],
             ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:staymitra/ForgotPassword/forgotpassword.dart';
 import 'package:staymitra/UserSIgnUp/signup.dart';
 import 'package:staymitra/services/auth_service.dart';
+import 'package:staymitra/services/firebase_auth_service.dart';
 
 class SignInPage extends StatefulWidget {
   const SignInPage({super.key});
@@ -15,6 +16,7 @@ class _SignInPageState extends State<SignInPage> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _authService = AuthService();
+  final _firebaseAuthService = FirebaseAuthService();
   bool _isLoading = false;
   bool _obscurePassword = true;
 
@@ -161,34 +163,60 @@ class _SignInPageState extends State<SignInPage> {
 
 
   Future<void> _signInWithGoogle() async {
+    setState(() => _isLoading = true);
+
     try {
-      final result = await _authService.signInWithGoogle();
-      if (result['success'] && mounted) {
-        Navigator.pushReplacementNamed(context, '/main');
-      } else if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['message'] ?? 'Google sign in failed'),
-            backgroundColor: Colors.orange,
-            duration: const Duration(seconds: 4),
-          ),
-        );
+      final result = await _firebaseAuthService.signInWithGoogle();
+
+      if (mounted) {
+        if (result['success'] == true) {
+          // Sign-in successful, navigate to main page
+          Navigator.pushReplacementNamed(context, '/main');
+        } else {
+          // Sign-in failed, show error message
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error_outline, color: Colors.white),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      result['message'] ?? 'Google sign-in failed',
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 4),
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Google sign in failed';
-        if (e.toString().contains('provider is not enabled')) {
-          errorMessage =
-              'Google sign-in is not configured yet. Please use email signup for now.';
-        }
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
-            backgroundColor: Colors.orange,
+            content: Row(
+              children: [
+                const Icon(Icons.error_outline, color: Colors.white),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    'Google sign-in failed: ${e.toString()}',
+                    style: const TextStyle(color: Colors.white),
+                  ),
+                ),
+              ],
+            ),
+            backgroundColor: Colors.red,
             duration: const Duration(seconds: 4),
           ),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 

@@ -6,14 +6,14 @@
     [
       "C:\\Users\\User\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
       "-C",
-      "C:\\STAYMITHRA\\stay_mithra\\staymitra\\android\\app\\.cxx\\RelWithDebInfo\\4g6y4i5q\\x86",
+      "E:\\meenakshy\\staymithra30082025\\android\\app\\.cxx\\RelWithDebInfo\\4g6y4i5q\\x86",
       "clean"
     ]
   ],
   "buildTargetsCommandComponents": [
     "C:\\Users\\User\\AppData\\Local\\Android\\sdk\\cmake\\3.22.1\\bin\\ninja.exe",
     "-C",
-    "C:\\STAYMITHRA\\stay_mithra\\staymitra\\android\\app\\.cxx\\RelWithDebInfo\\4g6y4i5q\\x86",
+    "E:\\meenakshy\\staymithra30082025\\android\\app\\.cxx\\RelWithDebInfo\\4g6y4i5q\\x86",
     "{LIST_OF_TARGETS_TO_BUILD}"
   ],
   "libraries": {}

@@ -1,4 +1,4 @@
-package com.staymitra.app
+package com.staymithra.app
 
 import io.flutter.embedding.android.FlutterActivity
 
