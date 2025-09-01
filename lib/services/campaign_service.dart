@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../config/supabase_config.dart';
 import '../models/campaign_model.dart';
@@ -607,6 +608,40 @@ class CampaignService {
     } catch (e) {
       print('Error adding campaign comment: $e');
       return null;
+    }
+  }
+
+
+
+  // Check if user is participant of a campaign
+  Future<bool> isUserParticipant(String campaignId, String userId) async {
+    try {
+      final response = await _supabase
+          .from('campaign_participants')
+          .select('id')
+          .eq('campaign_id', campaignId)
+          .eq('user_id', userId)
+          .maybeSingle();
+
+      return response != null;
+    } catch (e) {
+      print('Error checking user participation: $e');
+      return false;
+    }
+  }
+
+  // Get participant count for a campaign
+  Future<int> getParticipantCount(String campaignId) async {
+    try {
+      final response = await _supabase
+          .from('campaign_participants')
+          .select('id')
+          .eq('campaign_id', campaignId);
+
+      return response.length;
+    } catch (e) {
+      debugPrint('Error getting participant count: $e');
+      return 0;
     }
   }
 }

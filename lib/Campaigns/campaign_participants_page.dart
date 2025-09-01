@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:staymitra/services/campaign_service.dart';
+import 'package:staymitra/models/user_model.dart';
 
 class CampaignParticipantsPage extends StatefulWidget {
   final String campaignId;
@@ -22,36 +24,9 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
   String _selectedFilter = 'All';
   final List<String> _filterOptions = ['All', 'Recent', 'Active', 'Verified'];
 
-  // Mock data - replace with actual service calls
-  final List<CampaignParticipant> _participants = [
-    CampaignParticipant(
-      id: '1',
-      name: 'John Doe',
-      username: '@johndoe',
-      avatarUrl: null,
-      joinedDate: DateTime.now().subtract(const Duration(days: 2)),
-      isVerified: true,
-      participationLevel: 'Active',
-    ),
-    CampaignParticipant(
-      id: '2',
-      name: 'Sarah Wilson',
-      username: '@sarahw',
-      avatarUrl: null,
-      joinedDate: DateTime.now().subtract(const Duration(days: 5)),
-      isVerified: false,
-      participationLevel: 'Moderate',
-    ),
-    CampaignParticipant(
-      id: '3',
-      name: 'Mike Johnson',
-      username: '@mikej',
-      avatarUrl: null,
-      joinedDate: DateTime.now().subtract(const Duration(days: 1)),
-      isVerified: true,
-      participationLevel: 'High',
-    ),
-  ];
+  final CampaignService _campaignService = CampaignService();
+  List<CampaignParticipant> _participants = [];
+  List<CampaignParticipant> _filteredParticipants = [];
 
   @override
   void initState() {
@@ -60,11 +35,82 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
   }
 
   Future<void> _loadParticipants() async {
-    // Simulate loading
-    await Future.delayed(const Duration(seconds: 1));
-    setState(() {
-      _isLoading = false;
-    });
+    try {
+      setState(() {
+        _isLoading = true;
+      });
+
+      final participants = await _campaignService.getCampaignParticipants(widget.campaignId);
+
+      if (mounted) {
+        setState(() {
+          _participants = participants.map((participant) {
+            final userData = participant['users'] as Map<String, dynamic>?;
+            final joinedAt = DateTime.parse(participant['joined_at']);
+
+            return CampaignParticipant(
+              id: participant['id'],
+              name: userData?['full_name'] ?? 'Unknown User',
+              username: '@${userData?['username'] ?? 'unknown'}',
+              avatarUrl: userData?['avatar_url'],
+              joinedDate: joinedAt,
+              isVerified: userData?['is_verified'] ?? false,
+              participationLevel: _getParticipationLevel(joinedAt),
+            );
+          }).toList();
+          _applyFilter();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error loading participants: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  String _getParticipationLevel(DateTime joinedDate) {
+    final daysSinceJoined = DateTime.now().difference(joinedDate).inDays;
+    if (daysSinceJoined <= 1) {
+      return 'High';
+    } else if (daysSinceJoined <= 7) {
+      return 'Active';
+    } else {
+      return 'Moderate';
+    }
+  }
+
+  void _applyFilter() {
+    switch (_selectedFilter) {
+      case 'Recent':
+        _filteredParticipants = _participants
+            .where((p) => DateTime.now().difference(p.joinedDate).inDays <= 7)
+            .toList();
+        break;
+      case 'Active':
+        _filteredParticipants = _participants
+            .where((p) => p.participationLevel == 'Active' || p.participationLevel == 'High')
+            .toList();
+        break;
+      case 'Verified':
+        _filteredParticipants = _participants
+            .where((p) => p.isVerified)
+            .toList();
+        break;
+      default:
+        _filteredParticipants = List.from(_participants);
+    }
+
+    // Sort by joined date (most recent first)
+    _filteredParticipants.sort((a, b) => b.joinedDate.compareTo(a.joinedDate));
   }
 
   @override
@@ -96,9 +142,12 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
           
           // Participants List
           Expanded(
-            child: _isLoading 
+            child: _isLoading
                 ? const Center(child: CircularProgressIndicator())
-                : _buildParticipantsList(screenWidth),
+                : RefreshIndicator(
+                    onRefresh: _loadParticipants,
+                    child: _buildParticipantsList(screenWidth),
+                  ),
           ),
         ],
       ),
@@ -151,7 +200,7 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
                     ),
                     SizedBox(width: screenWidth * 0.01),
                     Text(
-                      '${widget.totalParticipants} Participants',
+                      '${_participants.length} Participants',
                       style: TextStyle(
                         fontSize: screenWidth * 0.035,
                         color: Colors.white,
@@ -213,6 +262,7 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
             onTap: () {
               setState(() {
                 _selectedFilter = option;
+                _applyFilter();
               });
             },
             child: Container(
@@ -253,7 +303,7 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
   }
 
   Widget _buildParticipantsList(double screenWidth) {
-    if (_participants.isEmpty) {
+    if (_filteredParticipants.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -288,9 +338,9 @@ class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
 
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: screenWidth * 0.04),
-      itemCount: _participants.length,
+      itemCount: _filteredParticipants.length,
       itemBuilder: (context, index) {
-        final participant = _participants[index];
+        final participant = _filteredParticipants[index];
         return _buildParticipantCard(participant, screenWidth);
       },
     );
