@@ -1,27 +1,159 @@
 import 'package:flutter/material.dart';
+import 'package:staymitra/services/campaign_service.dart';
 
-class CampaignParticipantsPage extends StatelessWidget {
-  const CampaignParticipantsPage({super.key});
+class CampaignParticipantsPage extends StatefulWidget {
+  final String campaignId;
+  final String? campaignTitle;
+
+  const CampaignParticipantsPage({
+    super.key,
+    required this.campaignId,
+    this.campaignTitle,
+  });
+
+  @override
+  State<CampaignParticipantsPage> createState() => _CampaignParticipantsPageState();
+}
+
+class _CampaignParticipantsPageState extends State<CampaignParticipantsPage> {
+  final CampaignService _campaignService = CampaignService();
+  List<Map<String, dynamic>> _participants = [];
+  bool _isLoading = true;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadParticipants();
+  }
+
+  Future<void> _loadParticipants() async {
+    try {
+      setState(() {
+        _isLoading = true;
+        _error = null;
+      });
+
+      final participants = await _campaignService.getCampaignParticipants(widget.campaignId);
+
+      if (mounted) {
+        setState(() {
+          _participants = participants;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _error = e.toString();
+          _isLoading = false;
+        });
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final participants = List.generate(
-      12,
-      (i) => {
-        "name": "User $i",
-        "username": "@user$i",
-        "avatar": "https://i.pravatar.cc/150?img=${i + 10}",
-      },
-    );
-
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Campaign Participants"),
+        title: Text(widget.campaignTitle != null
+            ? "${widget.campaignTitle} - Participants"
+            : "Campaign Participants"),
         backgroundColor: const Color(0xFF007F8C),
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: Padding(
+      body: _buildBody(),
+    );
+  }
+
+  Widget _buildBody() {
+    if (_isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF007F8C)),
+        ),
+      );
+    }
+
+    if (_error != null) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.error_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Error loading participants',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 16),
+            ElevatedButton(
+              onPressed: _loadParticipants,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF007F8C),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (_participants.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.people_outline,
+              size: 64,
+              color: Colors.grey[400],
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'No participants yet',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.grey[600],
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Share your campaign to get more participants',
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey[500],
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
+      );
+    }
+
+    return RefreshIndicator(
+      onRefresh: _loadParticipants,
+      child: Padding(
         padding: const EdgeInsets.all(12),
         child: GridView.builder(
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -30,13 +162,17 @@ class CampaignParticipantsPage extends StatelessWidget {
             mainAxisSpacing: 12,
             childAspectRatio: 0.85,
           ),
-          itemCount: participants.length,
+          itemCount: _participants.length,
           itemBuilder: (context, index) {
-            final user = participants[index];
+            final participant = _participants[index];
+            final userData = participant['users'] as Map<String, dynamic>?;
+
             return _ParticipantCard(
-              name: user["name"]!,
-              username: user["username"]!,
-              avatarUrl: user["avatar"]!,
+              name: userData?['full_name'] ?? 'Unknown User',
+              username: '@${userData?['username'] ?? 'unknown'}',
+              avatarUrl: userData?['avatar_url'],
+              isVerified: userData?['is_verified'] ?? false,
+              joinedDate: DateTime.parse(participant['joined_at']),
             );
           },
         ),
@@ -48,12 +184,16 @@ class CampaignParticipantsPage extends StatelessWidget {
 class _ParticipantCard extends StatelessWidget {
   final String name;
   final String username;
-  final String avatarUrl;
+  final String? avatarUrl;
+  final bool isVerified;
+  final DateTime joinedDate;
 
   const _ParticipantCard({
     required this.name,
     required this.username,
-    required this.avatarUrl,
+    this.avatarUrl,
+    this.isVerified = false,
+    required this.joinedDate,
   });
 
   @override
@@ -70,9 +210,40 @@ class _ParticipantCard extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              CircleAvatar(
-                radius: 36,
-                backgroundImage: NetworkImage(avatarUrl),
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 36,
+                    backgroundImage: avatarUrl != null
+                        ? NetworkImage(avatarUrl!)
+                        : null,
+                    backgroundColor: Colors.grey[300],
+                    child: avatarUrl == null
+                        ? Icon(
+                            Icons.person,
+                            size: 40,
+                            color: Colors.grey[600],
+                          )
+                        : null,
+                  ),
+                  if (isVerified)
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(2),
+                        decoration: const BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.verified,
+                          color: Color(0xFF007F8C),
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 10),
               Text(
@@ -82,6 +253,8 @@ class _ParticipantCard extends StatelessWidget {
                   fontSize: 16,
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
               const SizedBox(height: 4),
               Text(
@@ -91,11 +264,41 @@ class _ParticipantCard extends StatelessWidget {
                   color: Colors.grey[600],
                 ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                _formatJoinDate(joinedDate),
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey[500],
+                ),
+                textAlign: TextAlign.center,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  String _formatJoinDate(DateTime date) {
+    final now = DateTime.now();
+    final difference = now.difference(date);
+
+    if (difference.inDays == 0) {
+      return 'Joined today';
+    } else if (difference.inDays == 1) {
+      return 'Joined yesterday';
+    } else if (difference.inDays < 7) {
+      return 'Joined ${difference.inDays} days ago';
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return weeks == 1 ? 'Joined 1 week ago' : 'Joined $weeks weeks ago';
+    } else {
+      final months = (difference.inDays / 30).floor();
+      return months == 1 ? 'Joined 1 month ago' : 'Joined $months months ago';
+    }
   }
 }

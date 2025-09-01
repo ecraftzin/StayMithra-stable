@@ -399,10 +399,20 @@ class _CampaignDetailPageState extends State<CampaignDetailPage> {
                     size: screenWidth * 0.07,
                   ),
                 ),
-                IconButton(onPressed: (){
-                  Navigator.push(context, MaterialPageRoute(builder: (context)=>CampaignParticipantsPage()));
-                },
-                 icon: Icon(Icons.verified_user_sharp)),
+                IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => CampaignParticipantsPage(
+                          campaignId: widget.campaign.id,
+                          campaignTitle: widget.campaign.title,
+                        ),
+                      ),
+                    );
+                  },
+                  icon: const Icon(Icons.verified_user_sharp),
+                ),
               ],
             ),
           ],
