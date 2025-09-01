@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:staymitra/MainPage/mainpage.dart';
 import 'package:staymitra/SplashScreen/getstarted.dart';
@@ -13,27 +14,45 @@ import 'package:staymitra/Campaigns/create_campaign_page.dart';
 import 'package:staymitra/ForgotPassword/reset_password_page.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+  // Global error handling to prevent crashes
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+  };
 
-  // Initialize Firebase
-  await FirebaseConfig.initialize();
+  runZonedGuarded(() async {
+    WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Supabase
-  await SupabaseConfig.initialize();
+    try {
+      // Initialize Firebase
+      await FirebaseConfig.initialize();
+    } catch (e) {
+      print('Firebase initialization error: $e');
+    }
 
-  // Initialize storage buckets
-  try {
-    await StorageService().createBucketsIfNeeded();
-  } catch (e) {
-    print('Storage initialization error: $e');
-  }
+    try {
+      // Initialize Supabase
+      await SupabaseConfig.initialize();
+    } catch (e) {
+      print('Supabase initialization error: $e');
+    }
 
-  // Run database migrations in background (non-blocking)
-  MigrationService.runMigrations().catchError((e) {
-    print('Migration error: $e');
+    // Initialize storage buckets
+    try {
+      await StorageService().createBucketsIfNeeded();
+    } catch (e) {
+      print('Storage initialization error: $e');
+    }
+
+    // Run database migrations in background (non-blocking)
+    MigrationService.runMigrations().catchError((e) {
+      print('Migration error: $e');
+    });
+
+    runApp(const MyApp());
+  }, (error, stack) {
+    print('Global error caught: $error');
+    print('Stack trace: $stack');
   });
-
-  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {

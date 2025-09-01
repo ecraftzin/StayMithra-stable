@@ -23,8 +23,10 @@ if (flutterVersionName == null) {
     flutterVersionName = '1.0'
 }
 
+// Removed ABI codes to fix build issues
+
 android {
-    namespace "com.staymitra.in"
+    namespace "com.staymithra.app"
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
@@ -59,16 +61,25 @@ android {
         targetSdkVersion 35
         versionCode flutterVersionCode.toInteger()
         versionName flutterVersionName
+        multiDexEnabled true
+
+        // Include all architectures for development
+        // ndk {
+        //     abiFilters 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86'
+        // }
     }
 
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
+            minifyEnabled false
+            shrinkResources false
         }
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
             signingConfig signingConfigs.debug
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 }
@@ -77,7 +88,11 @@ flutter {
     source '../..'
 }
 
-dependencies {}
+// Removed problematic ABI configuration for now
+
+dependencies {
+    implementation 'androidx.multidex:multidex:2.0.1'
+}
 
 // Task to copy APK to Flutter expected location
 task copyApkToFlutterLocation {

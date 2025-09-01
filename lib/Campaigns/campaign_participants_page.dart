@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:staymitra/services/campaign_service.dart';
-import 'package:staymitra/models/user_model.dart';
 
 class CampaignParticipantsPage extends StatefulWidget {
   final String campaignId;

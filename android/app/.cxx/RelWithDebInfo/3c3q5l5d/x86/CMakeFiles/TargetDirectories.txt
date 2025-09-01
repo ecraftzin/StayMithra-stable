@@ -1,0 +1,2 @@
+E:/meenakshy/staymithra30082025/android/app/.cxx/RelWithDebInfo/3c3q5l5d/x86/CMakeFiles/edit_cache.dir
+E:/meenakshy/staymithra30082025/android/app/.cxx/RelWithDebInfo/3c3q5l5d/x86/CMakeFiles/rebuild_cache.dir

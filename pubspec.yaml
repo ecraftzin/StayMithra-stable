@@ -39,8 +39,9 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/getstarted.png
-    - assets/images/signinup.png
-    - assets/logo/staymithra_logo.png
-    - assets/Signinwith/google.png
-    - assets/Signinwith/facebook.png
+    - assets/images/
+    - assets/logo/
+    - assets/Signinwith/
+
+  # Optimize app size
+  generate: true

@@ -12,8 +12,8 @@ class FirebaseConfig {
 
   // Google Sign In instance
   static GoogleSignIn get googleSignIn => GoogleSignIn(
-    // Use the client ID from your google-services.json
-    // This will be automatically configured
+    // Web client ID from google-services.json for proper authentication
+    serverClientId: '488287009295-8j3vu5gqlmmd77k4l6fsib6mrdtq8f7h.apps.googleusercontent.com',
   );
 }
 
