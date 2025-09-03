@@ -121,7 +121,7 @@ android {
         abi {
             enable true
             reset()
-            include 'arm64-v8a', 'armeabi-v7a'
+            include 'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86'
             universalApk false  // Disable universal APK to keep sizes small
         }
         // Removed deprecated density splits - use App Bundle instead
@@ -147,12 +147,28 @@ task copyApkToFlutterLocation {
         def flutterApkDir = new File(buildDir, "build/app/outputs/flutter-apk")
         flutterApkDir.mkdirs()
 
-        // Copy debug APK - prefer arm64-v8a, fallback to armeabi-v7a
+        // Copy debug APK - prefer x86_64 for emulators, then arm64-v8a, fallback to armeabi-v7a
+        def debugApkX86_64 = new File(project.buildDir, "outputs/flutter-apk/app-x86_64-debug.apk")
+        def debugApkX86 = new File(project.buildDir, "outputs/flutter-apk/app-x86-debug.apk")
         def debugApkArm64 = new File(project.buildDir, "outputs/flutter-apk/app-arm64-v8a-debug.apk")
         def debugApkArm32 = new File(project.buildDir, "outputs/flutter-apk/app-armeabi-v7a-debug.apk")
         def debugApkUniversal = new File(project.buildDir, "outputs/flutter-apk/app-debug.apk")
 
-        if (debugApkArm64.exists()) {
+        if (debugApkX86_64.exists()) {
+            copy {
+                from debugApkX86_64
+                into flutterApkDir
+                rename { "app-debug.apk" }
+            }
+            println "Copied x86_64 debug APK to: ${flutterApkDir}/app-debug.apk"
+        } else if (debugApkX86.exists()) {
+            copy {
+                from debugApkX86
+                into flutterApkDir
+                rename { "app-debug.apk" }
+            }
+            println "Copied x86 debug APK to: ${flutterApkDir}/app-debug.apk"
+        } else if (debugApkArm64.exists()) {
             copy {
                 from debugApkArm64
                 into flutterApkDir
@@ -175,12 +191,28 @@ task copyApkToFlutterLocation {
             println "Copied universal debug APK to: ${flutterApkDir}/app-debug.apk"
         }
 
-        // Copy release APK - prefer arm64-v8a, fallback to armeabi-v7a
+        // Copy release APK - prefer x86_64 for emulators, then arm64-v8a, fallback to armeabi-v7a
+        def releaseApkX86_64 = new File(project.buildDir, "outputs/flutter-apk/app-x86_64-release.apk")
+        def releaseApkX86 = new File(project.buildDir, "outputs/flutter-apk/app-x86-release.apk")
         def releaseApkArm64 = new File(project.buildDir, "outputs/flutter-apk/app-arm64-v8a-release.apk")
         def releaseApkArm32 = new File(project.buildDir, "outputs/flutter-apk/app-armeabi-v7a-release.apk")
         def releaseApkUniversal = new File(project.buildDir, "outputs/flutter-apk/app-release.apk")
 
-        if (releaseApkArm64.exists()) {
+        if (releaseApkX86_64.exists()) {
+            copy {
+                from releaseApkX86_64
+                into flutterApkDir
+                rename { "app-release.apk" }
+            }
+            println "Copied x86_64 release APK to: ${flutterApkDir}/app-release.apk"
+        } else if (releaseApkX86.exists()) {
+            copy {
+                from releaseApkX86
+                into flutterApkDir
+                rename { "app-release.apk" }
+            }
+            println "Copied x86 release APK to: ${flutterApkDir}/app-release.apk"
+        } else if (releaseApkArm64.exists()) {
             copy {
                 from releaseApkArm64
                 into flutterApkDir
