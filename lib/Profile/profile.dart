@@ -3,12 +3,10 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:share_plus/share_plus.dart';
 
 import 'package:staymitra/Profile/profileedit.dart';
-import 'package:staymitra/services/auth_service.dart';
-import 'package:staymitra/services/user_service.dart';
+import 'package:staymitra/services/unified_auth_service.dart';
 import 'package:staymitra/services/post_service.dart';
 import 'package:staymitra/services/campaign_service.dart';
 import 'package:staymitra/services/follow_service.dart';
-import 'package:staymitra/services/follow_request_service.dart';
 
 import 'package:staymitra/models/user_model.dart';
 import 'package:staymitra/models/post_model.dart';
@@ -26,12 +24,10 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin {
-  final AuthService _authService = AuthService();
-  final UserService _userService = UserService();
+  final UnifiedAuthService _authService = UnifiedAuthService();
   final PostService _postService = PostService();
   final CampaignService _campaignService = CampaignService();
   final FollowService _followService = FollowService();
-  final FollowRequestService _followRequestService = FollowRequestService();
 
   UserModel? _currentUser;
   bool _isLoading = true;
@@ -42,13 +38,11 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
   int _followingCount = 0;
 
   late TabController _tabController;
-  int _selectedTab = 0;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this)
-      ..addListener(() => setState(() => _selectedTab = _tabController.index));
+    _tabController = TabController(length: 3, vsync: this);
     _loadUserProfile();
   }
 
@@ -63,15 +57,16 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   Future<void> _loadUserProfile() async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser == null) {
+      if (!_authService.isLoggedIn) {
         setState(() => _isLoading = false);
         return;
       }
 
-      final userProfile = await _userService.getUserById(currentUser.id);
-      await _loadUserStats(currentUser.id);
-      await _loadFollowerCounts(currentUser.id);
+      final userProfile = await _authService.getCurrentUserProfile();
+      if (userProfile != null) {
+        await _loadUserStats(userProfile.id);
+        await _loadFollowerCounts(userProfile.id);
+      }
 
       if (!mounted) return;
       setState(() {
@@ -124,9 +119,8 @@ class _ProfilePageState extends State<ProfilePage> with TickerProviderStateMixin
 
   // Method to refresh counts from database (call this after follow/unfollow actions)
   Future<void> refreshFollowerCounts() async {
-    final currentUser = _authService.currentUser;
-    if (currentUser != null) {
-      await _loadFollowerCounts(currentUser.id);
+    if (_authService.isLoggedIn && _currentUser != null) {
+      await _loadFollowerCounts(_currentUser!.id);
     }
   }
 

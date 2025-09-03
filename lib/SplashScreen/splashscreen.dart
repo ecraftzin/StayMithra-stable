@@ -68,6 +68,7 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:staymitra/services/auth_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -83,6 +84,7 @@ class _SplashScreenState extends State<SplashScreen>
   late final Animation<double> _fade;
   late final Animation<double> _scale;
   late final Animation<Offset> _taglineSlide;
+  final AuthService _authService = AuthService();
 
   @override
   void initState() {
@@ -112,9 +114,21 @@ class _SplashScreenState extends State<SplashScreen>
 
     Timer(const Duration(milliseconds: 2200), () {
       if (!mounted) return;
-      // keep your named route
-      Navigator.pushReplacementNamed(context, '/get-started');
+      _navigateBasedOnAuthStatus();
     });
+  }
+
+  void _navigateBasedOnAuthStatus() {
+    // Check if user is authenticated
+    final currentUser = _authService.currentUser;
+
+    if (currentUser != null) {
+      // User is authenticated, go directly to main page
+      Navigator.pushReplacementNamed(context, '/main');
+    } else {
+      // User is not authenticated, show onboarding
+      Navigator.pushReplacementNamed(context, '/get-started');
+    }
   }
 
   @override

@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:supabase_flutter/supabase_flutter.dart'; // <-- for User/AuthState
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../config/supabase_config.dart'; // exposes `supabase`
 import '../config/firebase_config.dart';
 import '../SplashScreen/splashscreen.dart';
+import '../SplashScreen/getstarted.dart';
 import '../MainPage/mainpage.dart';
 import '../UserLogin/login.dart';
 import '../services/firebase_migration_service.dart';
@@ -24,6 +26,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   User? _supabaseUser;
   StreamSubscription<firebase_auth.User?>? _firebaseAuthSub;
   StreamSubscription<AuthState>? _supabaseAuthSub;
+  bool _isFirstTime = false;
 
   @override
   void initState() {
@@ -32,6 +35,9 @@ class _AuthWrapperState extends State<AuthWrapper> {
   }
 
   Future<void> _initializeAuth() async {
+    // Check if this is the first time the app is opened
+    await _checkFirstTimeUser();
+
     // Run Firebase migrations
     await FirebaseMigrationService.runFirebaseMigrations();
 
@@ -64,6 +70,21 @@ class _AuthWrapperState extends State<AuthWrapper> {
     });
   }
 
+  Future<void> _checkFirstTimeUser() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final hasSeenOnboarding = prefs.getBool('has_seen_onboarding') ?? false;
+      setState(() {
+        _isFirstTime = !hasSeenOnboarding;
+      });
+    } catch (e) {
+      print('Error checking first time user: $e');
+      setState(() {
+        _isFirstTime = false;
+      });
+    }
+  }
+
   @override
   void dispose() {
     _firebaseAuthSub?.cancel();
@@ -80,6 +101,17 @@ class _AuthWrapperState extends State<AuthWrapper> {
     // Check if user is logged in (Firebase takes priority, fallback to Supabase)
     final bool isLoggedIn = _firebaseUser != null || _supabaseUser != null;
 
-    return isLoggedIn ? const MainPage() : const SignInPage();
+    // If user is logged in, go to main page
+    if (isLoggedIn) {
+      return const MainPage();
+    }
+
+    // If user is not logged in and it's their first time, show onboarding
+    if (_isFirstTime) {
+      return const GetStartedPage();
+    }
+
+    // Otherwise, show login page
+    return const SignInPage();
   }
 }

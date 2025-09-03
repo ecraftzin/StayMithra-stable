@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:staymitra/UserLogin/login.dart';
 
 class GetStartedPage extends StatelessWidget {
@@ -40,8 +41,19 @@ class GetStartedPage extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
                   ElevatedButton.icon(
-                    onPressed: () {
-                      Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> const SignInPage()));
+                    onPressed: () async {
+                      // Mark that user has seen onboarding
+                      try {
+                        final prefs = await SharedPreferences.getInstance();
+                        await prefs.setBool('has_seen_onboarding', true);
+                      } catch (e) {
+                        // Continue even if SharedPreferences fails
+                        print('Error saving onboarding state: $e');
+                      }
+
+                      if (context.mounted) {
+                        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context)=> const SignInPage()));
+                      }
                     },
                     icon: const Icon(Icons.flight_takeoff),
                     label: const Text("Your Journey Starts Here"),

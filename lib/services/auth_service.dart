@@ -26,9 +26,49 @@ class AuthService {
           .eq('id', currentUser!.id)
           .single();
 
-      return UserModel.fromJson(response);
+      final userProfile = UserModel.fromJson(response);
+
+      // Check if profile data is incomplete (common with OAuth users)
+      if (_isProfileIncomplete(userProfile)) {
+        print('Profile incomplete, attempting to sync from auth metadata...');
+        await _syncProfileFromAuthMetadata();
+
+        // Try to fetch the updated profile
+        try {
+          final updatedResponse = await _supabase
+              .from('users')
+              .select()
+              .eq('id', currentUser!.id)
+              .single();
+          return UserModel.fromJson(updatedResponse);
+        } catch (e) {
+          print('Error fetching updated profile: $e');
+          return userProfile; // Return original profile if update fails
+        }
+      }
+
+      return userProfile;
     } catch (e) {
       print('Error getting user profile: $e');
+
+      // If user profile doesn't exist, try to create it from auth metadata
+      if (e.toString().contains('No rows returned')) {
+        print('User profile not found, creating from auth metadata...');
+        await _createProfileFromAuthMetadata();
+
+        // Try to fetch the newly created profile
+        try {
+          final response = await _supabase
+              .from('users')
+              .select()
+              .eq('id', currentUser!.id)
+              .single();
+          return UserModel.fromJson(response);
+        } catch (e2) {
+          print('Error fetching newly created profile: $e2');
+        }
+      }
+
       return null;
     }
   }
@@ -36,6 +76,64 @@ class AuthService {
   // Refresh current user profile (force reload from database)
   Future<UserModel?> refreshCurrentUserProfile() async {
     return await getCurrentUserProfile();
+  }
+
+  // Check if user profile is incomplete (missing key data from OAuth)
+  bool _isProfileIncomplete(UserModel user) {
+    return user.fullName == null ||
+           user.fullName!.isEmpty ||
+           user.avatarUrl == null;
+  }
+
+  // Sync profile data from auth metadata (for OAuth users)
+  Future<void> _syncProfileFromAuthMetadata() async {
+    if (!isLoggedIn) return;
+
+    try {
+      final authUser = currentUser!;
+      final metadata = authUser.userMetadata;
+
+      if (metadata != null) {
+        await _supabase.from('users').update({
+          'full_name': metadata['full_name'] ?? metadata['name'] ?? '',
+          'avatar_url': metadata['avatar_url'] ?? metadata['picture'],
+          'is_verified': metadata['email_verified'] == true || authUser.emailConfirmedAt != null,
+          'updated_at': DateTime.now().toIso8601String(),
+        }).eq('id', authUser.id);
+      }
+    } catch (e) {
+      print('Error syncing profile from auth metadata: $e');
+    }
+  }
+
+  // Create profile from auth metadata (for new OAuth users)
+  Future<void> _createProfileFromAuthMetadata() async {
+    if (!isLoggedIn) return;
+
+    try {
+      final authUser = currentUser!;
+      final metadata = authUser.userMetadata ?? {};
+
+      await _supabase.from('users').insert({
+        'id': authUser.id,
+        'email': authUser.email ?? '',
+        'username': _generateUsernameFromEmail(authUser.email ?? ''),
+        'full_name': metadata['full_name'] ?? metadata['name'] ?? '',
+        'avatar_url': metadata['avatar_url'] ?? metadata['picture'],
+        'is_verified': metadata['email_verified'] == true || authUser.emailConfirmedAt != null,
+        'created_at': DateTime.now().toIso8601String(),
+        'updated_at': DateTime.now().toIso8601String(),
+      });
+    } catch (e) {
+      print('Error creating profile from auth metadata: $e');
+    }
+  }
+
+  // Generate username from email
+  String _generateUsernameFromEmail(String email) {
+    if (email.isEmpty) return 'user_${DateTime.now().millisecondsSinceEpoch}';
+    final username = email.split('@')[0].toLowerCase();
+    return username.replaceAll(RegExp(r'[^a-z0-9_]'), '_');
   }
 
   // Sign up with email and password (with email verification)

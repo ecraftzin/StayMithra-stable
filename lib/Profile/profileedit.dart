@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import 'package:staymitra/services/auth_service.dart';
-import 'package:staymitra/services/user_service.dart';
+import 'package:staymitra/services/unified_auth_service.dart';
 import 'package:staymitra/services/storage_service.dart';
 import 'package:staymitra/services/permission_service.dart';
 import 'package:staymitra/models/user_model.dart';
@@ -15,8 +14,7 @@ class EditProfilePage extends StatefulWidget {
 }
 
 class _EditProfilePageState extends State<EditProfilePage> {
-  final _authService = AuthService();
-  final _userService = UserService();
+  final _authService = UnifiedAuthService();
   final _storageService = StorageService();
   final _imagePicker = ImagePicker();
   final _permissionService = PermissionService();
@@ -56,26 +54,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _loadUserData() async {
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        final userProfile = await _userService.getUserById(currentUser.id);
-        if (!mounted) return;
-        if (userProfile != null) {
-          setState(() {
-            _currentUser = userProfile;
-            _usernameController.text = userProfile.username;
-            _emailController.text = userProfile.email;
-            _fullNameController.text = userProfile.fullName ?? '';
-            _locationController.text = userProfile.location ?? '';
-            _bioController.text = userProfile.bio ?? '';
-            _websiteController.text = userProfile.website ?? '';
-            _isLoading = false;
-          });
-        } else {
-          setState(() => _isLoading = false);
-        }
+      if (!_authService.isLoggedIn) {
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      final userProfile = await _authService.getCurrentUserProfile();
+      if (!mounted) return;
+
+      if (userProfile != null) {
+        setState(() {
+          _currentUser = userProfile;
+          _usernameController.text = userProfile.username;
+          _emailController.text = userProfile.email;
+          _fullNameController.text = userProfile.fullName ?? '';
+          _locationController.text = userProfile.location ?? '';
+          _bioController.text = userProfile.bio ?? '';
+          _websiteController.text = userProfile.website ?? '';
+          _isLoading = false;
+        });
       } else {
-        if (mounted) setState(() => _isLoading = false);
+        setState(() => _isLoading = false);
       }
     } catch (e) {
       if (!mounted) return;
@@ -166,38 +165,38 @@ class _EditProfilePageState extends State<EditProfilePage> {
     setState(() => _isSaving = true);
 
     try {
-      final currentUser = _authService.currentUser;
-      if (currentUser != null) {
-        // Determine the avatar URL to save
-        String? avatarUrlToSave;
-        if (_removeProfilePicture) {
-          avatarUrlToSave = null; // Remove the profile picture
-        } else if (_newAvatarUrl != null) {
-          avatarUrlToSave = _newAvatarUrl; // Use new uploaded picture
-        } else {
-          avatarUrlToSave = _currentUser?.avatarUrl; // Keep existing picture
-        }
-
-        await _userService.updateUserProfile(
-          userId: currentUser.id,
-          username: _usernameController.text.trim(),
-          fullName: _fullNameController.text.trim(),
-          bio: _bioController.text.trim(),
-          location: _locationController.text.trim(),
-          website: _websiteController.text.trim(),
-          avatarUrl: avatarUrlToSave,
-          updateAvatar: _removeProfilePicture || _newAvatarUrl != null, // Update avatar if removing or adding
-        );
-
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Profile updated successfully!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        Navigator.pop(context, true);
+      if (!_authService.isLoggedIn) {
+        throw 'User not logged in';
       }
+
+      // Determine the avatar URL to save
+      String? avatarUrlToSave;
+      if (_removeProfilePicture) {
+        avatarUrlToSave = null; // Remove the profile picture
+      } else if (_newAvatarUrl != null) {
+        avatarUrlToSave = _newAvatarUrl; // Use new uploaded picture
+      } else {
+        avatarUrlToSave = _currentUser?.avatarUrl; // Keep existing picture
+      }
+
+      await _authService.updateProfile(
+        username: _usernameController.text.trim(),
+        fullName: _fullNameController.text.trim(),
+        bio: _bioController.text.trim(),
+        location: _locationController.text.trim(),
+        website: _websiteController.text.trim(),
+        avatarUrl: avatarUrlToSave,
+        updateAvatar: _removeProfilePicture || _newAvatarUrl != null, // Update avatar if removing or adding
+      );
+
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Profile updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+      Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

@@ -30,6 +30,13 @@ android {
     compileSdk = 35
     ndkVersion = "27.0.12077973"
 
+    // AAPT2 optimization settings to prevent daemon crashes
+    aaptOptions {
+        noCompress 'tflite'
+        noCompress 'lite'
+        cruncherEnabled = false  // Disable PNG crunching to reduce memory pressure
+    }
+
     compileOptions {
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
@@ -72,6 +79,10 @@ android {
         multiDexEnabled true
 
         // ABI filtering will be handled by splits configuration
+
+        // Additional size optimizations - more conservative resource filtering
+        resConfigs "en"
+        vectorDrawables.useSupportLibrary = true
     }
 
     buildTypes {
@@ -93,21 +104,27 @@ android {
             renderscriptDebuggable false
             pseudoLocalesEnabled false
 
-            // Aggressive size reduction
-            crunchPngs false // Disable PNG crunching for faster builds
+            // Disabled aggressive PNG crunching to prevent AAPT2 crashes
+            // crunchPngs true // Disabled to prevent memory issues
+
+            // R8 is used by default when minifyEnabled is true
+
+            // Additional optimizations
+            ndk {
+                debugSymbolLevel 'NONE' // Remove debug symbols
+            }
         }
     }
 
-    // Enable ABI splitting for smaller APKs
+    // Enable ABI splitting for smaller APKs (removed deprecated density splits)
     splits {
         abi {
             enable true
             reset()
-            include 'arm64-v8a'
-            universalApk false
+            include 'arm64-v8a', 'armeabi-v7a'
+            universalApk false  // Disable universal APK to keep sizes small
         }
-
-
+        // Removed deprecated density splits - use App Bundle instead
     }
 
 
@@ -130,28 +147,60 @@ task copyApkToFlutterLocation {
         def flutterApkDir = new File(buildDir, "build/app/outputs/flutter-apk")
         flutterApkDir.mkdirs()
 
-        // Copy debug APK
-        def debugApk = new File(project.buildDir, "outputs/flutter-apk/app-debug.apk")
-        if (debugApk.exists()) {
-            def targetDebugApk = new File(flutterApkDir, "app-debug.apk")
+        // Copy debug APK - prefer arm64-v8a, fallback to armeabi-v7a
+        def debugApkArm64 = new File(project.buildDir, "outputs/flutter-apk/app-arm64-v8a-debug.apk")
+        def debugApkArm32 = new File(project.buildDir, "outputs/flutter-apk/app-armeabi-v7a-debug.apk")
+        def debugApkUniversal = new File(project.buildDir, "outputs/flutter-apk/app-debug.apk")
+
+        if (debugApkArm64.exists()) {
             copy {
-                from debugApk
+                from debugApkArm64
                 into flutterApkDir
                 rename { "app-debug.apk" }
             }
-            println "Copied debug APK to: ${targetDebugApk.absolutePath}"
+            println "Copied arm64-v8a debug APK to: ${flutterApkDir}/app-debug.apk"
+        } else if (debugApkArm32.exists()) {
+            copy {
+                from debugApkArm32
+                into flutterApkDir
+                rename { "app-debug.apk" }
+            }
+            println "Copied armeabi-v7a debug APK to: ${flutterApkDir}/app-debug.apk"
+        } else if (debugApkUniversal.exists()) {
+            copy {
+                from debugApkUniversal
+                into flutterApkDir
+                rename { "app-debug.apk" }
+            }
+            println "Copied universal debug APK to: ${flutterApkDir}/app-debug.apk"
         }
 
-        // Copy release APK
-        def releaseApk = new File(project.buildDir, "outputs/flutter-apk/app-release.apk")
-        if (releaseApk.exists()) {
-            def targetReleaseApk = new File(flutterApkDir, "app-release.apk")
+        // Copy release APK - prefer arm64-v8a, fallback to armeabi-v7a
+        def releaseApkArm64 = new File(project.buildDir, "outputs/flutter-apk/app-arm64-v8a-release.apk")
+        def releaseApkArm32 = new File(project.buildDir, "outputs/flutter-apk/app-armeabi-v7a-release.apk")
+        def releaseApkUniversal = new File(project.buildDir, "outputs/flutter-apk/app-release.apk")
+
+        if (releaseApkArm64.exists()) {
             copy {
-                from releaseApk
+                from releaseApkArm64
                 into flutterApkDir
                 rename { "app-release.apk" }
             }
-            println "Copied release APK to: ${targetReleaseApk.absolutePath}"
+            println "Copied arm64-v8a release APK to: ${flutterApkDir}/app-release.apk"
+        } else if (releaseApkArm32.exists()) {
+            copy {
+                from releaseApkArm32
+                into flutterApkDir
+                rename { "app-release.apk" }
+            }
+            println "Copied armeabi-v7a release APK to: ${flutterApkDir}/app-release.apk"
+        } else if (releaseApkUniversal.exists()) {
+            copy {
+                from releaseApkUniversal
+                into flutterApkDir
+                rename { "app-release.apk" }
+            }
+            println "Copied universal release APK to: ${flutterApkDir}/app-release.apk"
         }
     }
 }

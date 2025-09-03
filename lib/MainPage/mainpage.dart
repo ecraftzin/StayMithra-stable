@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:staymitra/Campaigns/campaigns_page.dart';
 import 'package:staymitra/Home/home.dart';
@@ -27,6 +28,10 @@ class _MainPageState extends State<MainPage> {
   int _unreadChatCount = 0;
   UserModel? _currentUser;
 
+  // Real-time subscriptions
+  RealtimeChannel? _notificationSubscription;
+  RealtimeChannel? _messageSubscription;
+
   final List<Widget> _pages = [
     const StaymithraHomePage(),
     const CampaignsPage(),
@@ -40,6 +45,14 @@ class _MainPageState extends State<MainPage> {
     _loadCurrentUser();
     _loadUnreadNotificationCount();
     _loadUnreadChatCount();
+    _setupRealtimeSubscriptions();
+  }
+
+  @override
+  void dispose() {
+    _notificationSubscription?.unsubscribe();
+    _messageSubscription?.unsubscribe();
+    super.dispose();
   }
 
   Future<void> _loadCurrentUser() async {
@@ -82,6 +95,55 @@ class _MainPageState extends State<MainPage> {
     await _loadUnreadNotificationCount();
     await _loadUnreadChatCount();
     await _loadCurrentUser(); // Also refresh user profile
+  }
+
+  void _setupRealtimeSubscriptions() {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) return;
+
+    // Subscribe to new notifications
+    try {
+      _notificationSubscription = _notificationService.subscribeToNotifications((notification) {
+        if (mounted) {
+          _loadUnreadNotificationCount(); // Refresh notification count
+        }
+      });
+    } catch (e) {
+      print('Error setting up notification subscription: $e');
+    }
+
+    // Subscribe to message updates for real-time chat count updates
+    try {
+      _messageSubscription = Supabase.instance.client
+          .channel('messages_count_${currentUser.id}')
+          .onPostgresChanges(
+            event: PostgresChangeEvent.insert,
+            schema: 'public',
+            table: 'messages',
+            callback: (payload) {
+              if (mounted) {
+                // Only refresh if the message is not from current user
+                if (payload.newRecord['sender_id'] != currentUser.id) {
+                  _loadUnreadChatCount();
+                }
+              }
+            },
+          )
+          .onPostgresChanges(
+            event: PostgresChangeEvent.update,
+            schema: 'public',
+            table: 'messages',
+            callback: (payload) {
+              if (mounted) {
+                // Refresh count when messages are marked as read
+                _loadUnreadChatCount();
+              }
+            },
+          )
+          .subscribe();
+    } catch (e) {
+      print('Error setting up message subscription: $e');
+    }
   }
 
   Future<void> _navigateToCreatePost() async {
@@ -175,27 +237,38 @@ class _MainPageState extends State<MainPage> {
                     );
                     _refreshAllCounts(); // Refresh all counts after returning
                   },
-                  icon: const Icon(Icons.chat, color: Colors.white),
+                  icon: Icon(
+                    Icons.chat_bubble_outline,
+                    color: Colors.white,
+                    size: screenWidth * 0.055, // Responsive size
+                  ),
+                  iconSize: screenWidth * 0.055,
+                  padding: EdgeInsets.all(screenWidth * 0.025),
+                  constraints: BoxConstraints(
+                    minWidth: screenWidth * 0.12,
+                    minHeight: screenWidth * 0.12,
+                  ),
                 ),
                 if (_unreadChatCount > 0)
                   Positioned(
-                    right: 8,
-                    top: 8,
+                    right: screenWidth * 0.015,
+                    top: screenWidth * 0.015,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: EdgeInsets.all(screenWidth * 0.008),
                       decoration: BoxDecoration(
                         color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(screenWidth * 0.025),
+                        border: Border.all(color: Colors.white, width: 1),
                       ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
+                      constraints: BoxConstraints(
+                        minWidth: screenWidth * 0.045,
+                        minHeight: screenWidth * 0.045,
                       ),
                       child: Text(
                         _unreadChatCount > 99 ? '99+' : '$_unreadChatCount',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: screenWidth * 0.025,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
@@ -217,29 +290,40 @@ class _MainPageState extends State<MainPage> {
                     );
                     _refreshAllCounts(); // Refresh all counts after returning
                   },
-                  icon: const Icon(Icons.notifications, color: Colors.white),
+                  icon: Icon(
+                    Icons.notifications_outlined,
+                    color: Colors.white,
+                    size: screenWidth * 0.055, // Responsive size
+                  ),
+                  iconSize: screenWidth * 0.055,
+                  padding: EdgeInsets.all(screenWidth * 0.025),
+                  constraints: BoxConstraints(
+                    minWidth: screenWidth * 0.12,
+                    minHeight: screenWidth * 0.12,
+                  ),
                 ),
                 if (_unreadNotificationCount > 0)
                   Positioned(
-                    right: 8,
-                    top: 8,
+                    right: screenWidth * 0.015,
+                    top: screenWidth * 0.015,
                     child: Container(
-                      padding: const EdgeInsets.all(2),
+                      padding: EdgeInsets.all(screenWidth * 0.008),
                       decoration: BoxDecoration(
                         color: Colors.red,
-                        borderRadius: BorderRadius.circular(10),
+                        borderRadius: BorderRadius.circular(screenWidth * 0.025),
+                        border: Border.all(color: Colors.white, width: 1),
                       ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
+                      constraints: BoxConstraints(
+                        minWidth: screenWidth * 0.045,
+                        minHeight: screenWidth * 0.045,
                       ),
                       child: Text(
                         _unreadNotificationCount > 99
                             ? '99+'
                             : '$_unreadNotificationCount',
-                        style: const TextStyle(
+                        style: TextStyle(
                           color: Colors.white,
-                          fontSize: 10,
+                          fontSize: screenWidth * 0.025,
                           fontWeight: FontWeight.bold,
                         ),
                         textAlign: TextAlign.center,
