@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:staymitra/services/user_service.dart';
 import 'package:staymitra/services/chat_service.dart';
 import 'package:staymitra/services/follow_request_service.dart';
-import 'package:staymitra/services/follow_service.dart';
 import 'package:staymitra/models/user_model.dart';
 import 'package:staymitra/models/chat_model.dart';
 import 'package:staymitra/services/auth_service.dart';
@@ -139,32 +138,8 @@ class _UserSearchPageState extends State<UserSearchPage> {
     if (currentUser == null) return;
 
     try {
-      // Check if both users follow each other
-      final currentUserStatus = await _followRequestService.getFollowStatus(
-        currentUser.id,
-        user.id,
-      );
-      final otherUserStatus = await _followRequestService.getFollowStatus(
-        user.id,
-        currentUser.id,
-      );
-
-      // Check if there's any follow relationship (one-way follow allows chat)
-      final canChat = currentUserStatus != 'not_following' &&
-              currentUserStatus != 'requested' ||
-          otherUserStatus != 'not_following' && otherUserStatus != 'requested';
-
-      if (!canChat) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('You need to follow each other to start chatting'),
-              backgroundColor: Colors.orange,
-            ),
-          );
-        }
-        return;
-      }
+      // Allow users to enter chat regardless of follow status
+      // The follow prompt will be shown within the chat interface
 
       // Create or get existing chat
       final chat = await _chatService.createOrGetChat(
@@ -258,12 +233,14 @@ class _UserSearchPageState extends State<UserSearchPage> {
 
     // Prevent users from following themselves
     if (currentUser.id == user.id) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You cannot follow yourself'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You cannot follow yourself'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -273,63 +250,43 @@ class _UserSearchPageState extends State<UserSearchPage> {
       final currentStatus = _followStatuses[user.id] ?? 'not_following';
       bool success = false;
       String message = '';
+      String newStatus = currentStatus;
 
       switch (currentStatus) {
         case 'not_following':
-          // First check current status to avoid unnecessary requests
-          final currentStatus = await _followRequestService.getFollowStatus(
-            _authService.currentUser!.id,
-            user.id,
-          );
+          final result = await _followRequestService.sendFollowRequest(user.id);
+          success = result['success'] ?? false;
+          message = result['message'] ?? 'Unknown error';
 
-          if (currentStatus == 'following' ||
-              currentStatus == 'mutual' ||
-              currentStatus == 'followed_by') {
-            message = 'You are already connected!';
-            _followStatuses[user.id] = currentStatus;
-            success = true;
-          } else if (currentStatus == 'requested') {
-            message = 'Follow request already sent';
-            _followStatuses[user.id] = 'requested';
-            success = true;
+          if (success) {
+            newStatus = result['status'] ?? 'requested';
           } else {
-            final result = await _followRequestService.sendFollowRequest(user.id);
-            success = result['success'] ?? false;
-            message = result['message'] ?? 'Unknown error';
-
-            if (success) {
-              final newStatus = result['status'] ?? 'requested';
-              _followStatuses[user.id] = newStatus;
-            } else {
-              // If the request failed because they're already following, update the status
-              final returnedStatus = result['status'];
-              if (returnedStatus == 'following') {
-                _followStatuses[user.id] = 'following';
-              }
+            // If the request failed because they're already following, update the status
+            final returnedStatus = result['status'];
+            if (returnedStatus == 'following') {
+              newStatus = 'following';
+              success = true;
+              message = 'Already following this user';
             }
           }
           break;
 
         case 'requested':
           success = await _followRequestService.cancelFollowRequest(user.id);
-          message =
-              success ? 'Follow request cancelled' : 'Failed to cancel request';
-          if (success) _followStatuses[user.id] = 'not_following';
+          message = success ? 'Follow request cancelled' : 'Failed to cancel request';
+          if (success) newStatus = 'not_following';
           break;
 
         case 'incoming_request':
           // Accept the incoming follow request
-          // First, find the request ID
           final requestId = await _getIncomingRequestId(user.id);
           if (requestId != null) {
-            success =
-                await _followRequestService.acceptFollowRequest(requestId);
-            message = success
-                ? 'Follow request accepted!'
-                : 'Failed to accept request';
+            success = await _followRequestService.acceptFollowRequest(requestId);
+            message = success ? 'Follow request accepted!' : 'Failed to accept request';
             if (success) {
-              // Check the new status after accepting
-              _checkFollowStatus(user.id);
+              // Refresh the follow status after accepting
+              await _checkFollowStatus(user.id);
+              newStatus = _followStatuses[user.id] ?? 'followed_by';
             }
           } else {
             message = 'Request not found';
@@ -343,32 +300,33 @@ class _UserSearchPageState extends State<UserSearchPage> {
           message = result['message'] ?? 'Unknown error';
 
           if (success) {
-            final newStatus = result['status'] ?? 'mutual';
-            _followStatuses[user.id] = newStatus;
+            newStatus = result['status'] ?? 'mutual';
           } else {
             // If the request failed because they're already following, update the status
             final returnedStatus = result['status'];
             if (returnedStatus == 'following') {
-              _followStatuses[user.id] = 'following';
+              newStatus = 'following';
+              success = true;
+              message = 'Already following this user';
             }
           }
           break;
 
         case 'following':
         case 'mutual':
-          final followService = FollowService();
-          final currentUser = _authService.currentUser;
-          if (currentUser != null) {
-            final result = await followService.unfollowUser(currentUser.id, user.id);
-            success = result['success'] ?? false;
-            message = result['message'] ?? 'Failed to unfollow';
-            if (success) _followStatuses[user.id] = 'not_following';
+          success = await _followRequestService.unfollowUser(user.id);
+          message = success ? 'Unfollowed user' : 'Failed to unfollow';
+          if (success) {
+            newStatus = currentStatus == 'mutual' ? 'followed_by' : 'not_following';
           }
           break;
       }
 
       if (mounted) {
-        setState(() => _followLoadingStates[user.id] = false);
+        setState(() {
+          _followLoadingStates[user.id] = false;
+          _followStatuses[user.id] = newStatus;
+        });
 
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

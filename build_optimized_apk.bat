@@ -11,7 +11,7 @@ flutter pub get
 
 echo.
 echo Step 3: Building optimized release APK...
-flutter build apk --release --shrink --obfuscate --split-debug-info=build/debug-info --target-platform android-arm64,android-arm
+flutter build apk --release --shrink --obfuscate --split-debug-info=build/debug-info --target-platform android-arm64 --tree-shake-icons --dart-define=flutter.inspector.structuredErrors=false
 
 echo.
 echo Step 4: Building split APKs for even smaller size...

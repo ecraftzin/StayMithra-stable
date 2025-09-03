@@ -13,3 +13,8 @@ ios/Pods/
 **/*.so
 **/*.keystore
 **/*.jks
+
+# Android signing
+android/key.properties
+android/app/*.keystore
+android/app/*.jks

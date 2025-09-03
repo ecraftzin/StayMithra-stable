@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:font_awesome_icon_class/font_awesome_icon_class.dart';
+
 import 'package:staymitra/Campaigns/campaigns_page.dart';
 import 'package:staymitra/Home/home.dart';
 import 'package:staymitra/Profile/profile.dart';
@@ -175,7 +175,7 @@ class _MainPageState extends State<MainPage> {
                     );
                     _refreshAllCounts(); // Refresh all counts after returning
                   },
-                  icon: const Icon(FontAwesomeIcons.facebookMessenger, color: Colors.white),
+                  icon: const Icon(Icons.chat, color: Colors.white),
                 ),
                 if (_unreadChatCount > 0)
                   Positioned(

@@ -72,30 +72,38 @@ class FollowRequestService {
         'status': 'pending',
       });
 
-      // Get requester user info for notification
+      // Get requester user info for notification (run in background to avoid blocking UI)
+      _createFollowNotification(currentUser.id, targetUserId);
+
+      return {'success': true, 'message': 'Follow request sent successfully', 'status': 'requested'};
+    } catch (e) {
+      print('Error sending follow request: $e');
+      return {'success': false, 'message': 'Failed to send follow request'};
+    }
+  }
+
+  // Create follow notification in background to avoid blocking UI
+  Future<void> _createFollowNotification(String requesterId, String targetUserId) async {
+    try {
       final requesterInfo = await _supabase
           .from('users')
           .select('username, full_name')
-          .eq('id', currentUser.id)
+          .eq('id', requesterId)
           .single();
 
-      // Create notification for the target user
       await _notificationService.createNotification(
         userId: targetUserId,
         type: 'follow_request',
         title: 'New Follow Request',
         message: '${requesterInfo['username']} wants to follow you',
         data: {
-          'requester_id': currentUser.id,
+          'requester_id': requesterId,
           'requester_username': requesterInfo['username'],
           'requester_full_name': requesterInfo['full_name'],
         },
       );
-
-      return {'success': true, 'message': 'Follow request sent successfully', 'status': 'requested'};
     } catch (e) {
-      print('Error sending follow request: $e');
-      return {'success': false, 'message': 'Failed to send follow request'};
+      print('Error creating follow notification: $e');
     }
   }
 
@@ -273,90 +281,70 @@ class FollowRequestService {
   Future<String> getFollowStatus(
       String currentUserId, String targetUserId) async {
     try {
-      print('=== DEBUG: Getting follow status for $currentUserId -> $targetUserId ===');
+      // Use a single query to get all relevant information at once for better performance
+      final results = await Future.wait([
+        // Check if current user is following target user
+        _supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', currentUserId)
+            .eq('following_id', targetUserId)
+            .maybeSingle(),
 
-      // Check if current user is following target user
-      final isCurrentFollowingTarget = await _supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', currentUserId)
-          .eq('following_id', targetUserId)
-          .maybeSingle();
+        // Check if target user is following current user
+        _supabase
+            .from('follows')
+            .select('id')
+            .eq('follower_id', targetUserId)
+            .eq('following_id', currentUserId)
+            .maybeSingle(),
 
-      print('DEBUG: isCurrentFollowingTarget = $isCurrentFollowingTarget');
+        // Check if there's a pending request from current user to target user
+        _supabase
+            .from('follow_requests')
+            .select('id')
+            .eq('requester_id', currentUserId)
+            .eq('requested_id', targetUserId)
+            .eq('status', 'pending')
+            .maybeSingle(),
+      ]);
 
-      // Check if target user is following current user
-      final isTargetFollowingCurrent = await _supabase
-          .from('follows')
-          .select('id')
-          .eq('follower_id', targetUserId)
-          .eq('following_id', currentUserId)
-          .maybeSingle();
+      final isCurrentFollowingTarget = results[0];
+      final isTargetFollowingCurrent = results[1];
+      final hasPendingRequest = results[2];
 
-      print('DEBUG: isTargetFollowingCurrent = $isTargetFollowingCurrent');
+      // Determine status based on follow relationships
+      if (isCurrentFollowingTarget != null && isTargetFollowingCurrent != null) {
+        return 'mutual'; // Both follow each other
+      } else if (isCurrentFollowingTarget != null) {
+        return 'following'; // Current user follows target
+      } else if (isTargetFollowingCurrent != null) {
+        return 'followed_by'; // Target follows current user
+      } else if (hasPendingRequest != null) {
+        return 'requested'; // Request sent but not accepted
+      }
 
-      // Check if there's a pending request from current user to target user
-      final hasPendingRequest = await _supabase
-          .from('follow_requests')
-          .select('id')
-          .eq('requester_id', currentUserId)
-          .eq('requested_id', targetUserId)
-          .eq('status', 'pending')
-          .maybeSingle();
-
-      print('DEBUG: hasPendingRequest = $hasPendingRequest');
-
-      // Check for accepted request (either direction) that might not have follow relationship yet
+      // Check for accepted requests only if no follow relationship exists
       final acceptedRequests = await _supabase
           .from('follow_requests')
           .select('id, requester_id, requested_id')
           .or('and(requester_id.eq.$currentUserId,requested_id.eq.$targetUserId),and(requester_id.eq.$targetUserId,requested_id.eq.$currentUserId)')
-          .eq('status', 'accepted');
+          .eq('status', 'accepted')
+          .limit(1);
 
-      final hasAcceptedRequest =
-          acceptedRequests.isNotEmpty ? acceptedRequests.first : null;
-
-      print('DEBUG: hasAcceptedRequest = $hasAcceptedRequest');
-
-      // Determine status
-      if (isCurrentFollowingTarget != null &&
-          isTargetFollowingCurrent != null) {
-        print('DEBUG: Returning mutual');
-        return 'mutual'; // Both follow each other
-      } else if (isCurrentFollowingTarget != null) {
-        print('DEBUG: Returning following');
-        return 'following'; // Current user follows target
-      } else if (isTargetFollowingCurrent != null) {
-        print('DEBUG: Returning followed_by');
-        return 'followed_by'; // Target follows current user
-      } else if (hasAcceptedRequest != null) {
-        print('DEBUG: Found accepted request, creating follow relationship');
+      if (acceptedRequests.isNotEmpty) {
+        final hasAcceptedRequest = acceptedRequests.first;
         // If there's an accepted request but no follow relationship, create it
         await _createFollowFromAcceptedRequest(hasAcceptedRequest);
-        // Re-check the follow status after creating relationship
-        final newFollowStatus = await _supabase
-            .from('follows')
-            .select('id')
-            .eq('follower_id', hasAcceptedRequest['requester_id'])
-            .eq('following_id', hasAcceptedRequest['requested_id'])
-            .maybeSingle();
 
-        if (newFollowStatus != null) {
-          // Check if it's mutual now
-          if (hasAcceptedRequest['requester_id'] == currentUserId) {
-            print('DEBUG: Returning following after creating relationship');
-            return 'following'; // Current user is now following target
-          } else {
-            print('DEBUG: Returning followed_by after creating relationship');
-            return 'followed_by'; // Target is now following current user
-          }
+        // Return the appropriate status based on who requested
+        if (hasAcceptedRequest['requester_id'] == currentUserId) {
+          return 'following'; // Current user is now following target
+        } else {
+          return 'followed_by'; // Target is now following current user
         }
-      } else if (hasPendingRequest != null) {
-        print('DEBUG: Returning requested');
-        return 'requested'; // Request sent but not accepted
       }
 
-      print('DEBUG: Returning not_following (default)');
       return 'not_following'; // Default fallback
     } catch (e) {
       print('Error getting follow status: $e');

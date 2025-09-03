@@ -73,3 +73,27 @@
 # Additional Flutter rules
 -keep class io.flutter.embedding.** { *; }
 -dontwarn io.flutter.embedding.**
+
+# Aggressive size optimization rules
+-optimizations !code/simplification/arithmetic,!code/simplification/cast,!field/*,!class/merging/*
+-optimizationpasses 5
+-allowaccessmodification
+-dontpreverify
+-repackageclasses ''
+
+# Remove debug logs for size reduction
+-assumenosideeffects class android.util.Log {
+    public static *** d(...);
+    public static *** v(...);
+    public static *** i(...);
+    public static *** w(...);
+}
+
+# Remove unused code more aggressively
+-dontwarn **
+-ignorewarnings
+
+# Additional size optimizations
+-printmapping mapping.txt
+-printusage usage.txt
+-printseeds seeds.txt

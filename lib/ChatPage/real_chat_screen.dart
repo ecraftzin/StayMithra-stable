@@ -41,11 +41,20 @@ class _RealChatScreenState extends State<RealChatScreen> {
   String _followStatus =
       'not_following'; // 'not_following', 'requested', 'following', 'mutual'
   bool _isFollowLoading = false;
+  DateTime? _lastFollowStatusCheck;
 
   @override
   void initState() {
     super.initState();
     _initializeChat();
+    _checkFollowStatus();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Refresh follow status when returning to this chat screen
+    // This ensures the button shows the correct state after navigation
     _checkFollowStatus();
   }
 
@@ -176,9 +185,16 @@ class _RealChatScreenState extends State<RealChatScreen> {
     });
   }
 
-  Future<void> _checkFollowStatus() async {
+  Future<void> _checkFollowStatus({bool forceRefresh = false}) async {
     final currentUser = _authService.currentUser;
     if (currentUser == null) return;
+
+    // Cache follow status for 30 seconds to prevent excessive API calls
+    final now = DateTime.now();
+    if (!forceRefresh && _lastFollowStatusCheck != null &&
+        now.difference(_lastFollowStatusCheck!).inSeconds < 30) {
+      return; // Use cached status
+    }
 
     try {
       final status = await _followRequestService.getFollowStatus(
@@ -187,7 +203,10 @@ class _RealChatScreenState extends State<RealChatScreen> {
       );
 
       if (mounted) {
-        setState(() => _followStatus = status);
+        setState(() {
+          _followStatus = status;
+          _lastFollowStatusCheck = now;
+        });
       }
     } catch (e) {
       print('Error checking follow status: $e');
@@ -202,12 +221,14 @@ class _RealChatScreenState extends State<RealChatScreen> {
 
     // Prevent users from following themselves
     if (currentUser.id == widget.peerId) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('You cannot follow yourself'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('You cannot follow yourself'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       return;
     }
 
@@ -216,75 +237,97 @@ class _RealChatScreenState extends State<RealChatScreen> {
     try {
       bool success = false;
       String message = '';
+      String newStatus = _followStatus;
 
       switch (_followStatus) {
         case 'not_following':
           final result = await _followRequestService.sendFollowRequest(widget.peerId);
           success = result['success'] ?? false;
-          message = result['message'] ?? 'Unknown error';
+          message = result['message']?.isNotEmpty == true
+              ? result['message']
+              : (success ? 'Follow request sent!' : 'Failed to send follow request');
 
           if (success) {
-            final newStatus = result['status'] ?? 'requested';
-            _followStatus = newStatus;
+            newStatus = result['status'] ?? 'requested';
           } else {
             // If the request failed because they're already following, update the status
             final returnedStatus = result['status'];
             if (returnedStatus == 'following') {
-              _followStatus = 'following';
+              newStatus = 'following';
+              success = true; // Consider this a success since they're already following
+              message = 'Already following this user';
             }
           }
           break;
 
         case 'requested':
-          success =
-              await _followRequestService.cancelFollowRequest(widget.peerId);
-          message =
-              success ? 'Follow request cancelled' : 'Failed to cancel request';
-          if (success) _followStatus = 'not_following';
+          success = await _followRequestService.cancelFollowRequest(widget.peerId);
+          message = success ? 'Follow request cancelled' : 'Failed to cancel follow request';
+          if (success) {
+            newStatus = 'not_following';
+            // Force refresh to ensure accurate status
+            _lastFollowStatusCheck = null;
+          }
           break;
 
         case 'following':
           success = await _followRequestService.unfollowUser(widget.peerId);
-          message = success ? 'Unfollowed user' : 'Failed to unfollow';
-          if (success) _followStatus = 'not_following';
+          message = success ? 'Unfollowed user' : 'Failed to unfollow user';
+          if (success) {
+            // After unfollowing, force refresh to get accurate status
+            await _checkFollowStatus(forceRefresh: true);
+            return; // Exit early since _checkFollowStatus will update the state
+          }
+          break;
+
+        case 'followed_by':
+          final result = await _followRequestService.sendFollowRequest(widget.peerId);
+          success = result['success'] ?? false;
+          message = result['message']?.isNotEmpty == true
+              ? result['message']
+              : (success ? 'Now following each other!' : 'Failed to follow back');
+
+          if (success) {
+            newStatus = 'mutual'; // Now both follow each other
+            message = 'Now following each other!';
+          }
           break;
 
         case 'mutual':
           success = await _followRequestService.unfollowUser(widget.peerId);
-          message = success ? 'Unfollowed user' : 'Failed to unfollow';
-          if (success) _followStatus = 'following';
+          message = success ? 'Unfollowed user' : 'Failed to unfollow user';
+          if (success) {
+            // After unfollowing, force refresh to get accurate status
+            await _checkFollowStatus(forceRefresh: true);
+            return; // Exit early since _checkFollowStatus will update the state
+          }
           break;
       }
 
       if (mounted) {
-        setState(() => _isFollowLoading = false);
+        setState(() {
+          _isFollowLoading = false;
+          _followStatus = newStatus;
+        });
 
-        if (success) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.green,
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(message),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: success ? Colors.green : Colors.red,
+          ),
+        );
       }
     } catch (e) {
       if (mounted) {
         setState(() => _isFollowLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error: $e'),
+            content: Text('Something went wrong. Please try again.'),
             backgroundColor: Colors.red,
           ),
         );
       }
+      print('Error in follow action: $e'); // Log for debugging
     }
   }
 
@@ -295,9 +338,11 @@ class _RealChatScreenState extends State<RealChatScreen> {
       case 'requested':
         return 'Requested';
       case 'following':
-        return 'Unfollow';
+        return 'Following';
+      case 'followed_by':
+        return 'Follow Back';
       case 'mutual':
-        return 'Unfollow';
+        return 'Following';
       default:
         return 'Follow';
     }
@@ -310,12 +355,21 @@ class _RealChatScreenState extends State<RealChatScreen> {
       case 'requested':
         return Colors.orange;
       case 'following':
-        return Colors.grey;
+        return Colors.green;
+      case 'followed_by':
+        return const Color(0xFF007F8C);
       case 'mutual':
-        return Colors.grey;
+        return Colors.green;
       default:
         return const Color(0xFF007F8C);
     }
+  }
+
+  bool _canSendMessages() {
+    // Allow messaging if there's any follow relationship (one-way or mutual)
+    return _followStatus == 'following' ||
+           _followStatus == 'followed_by' ||
+           _followStatus == 'mutual';
   }
 
   @override
@@ -454,104 +508,104 @@ class _RealChatScreenState extends State<RealChatScreen> {
                         ),
                 ),
 
-                // Message input or follow requirement message
-                _followStatus == 'mutual'
-                    ? Container(
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: Colors.white,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.grey.withOpacity(0.1),
-                              blurRadius: 5,
-                              offset: const Offset(0, -2),
-                            ),
-                          ],
+                // Show follow prompt for non-following users
+                if (_followStatus == 'not_following' || _followStatus == 'requested')
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.blue[50],
+                      border: Border(
+                        top: BorderSide(color: Colors.blue[200]!),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline,
+                          color: Colors.blue[600],
+                          size: 20,
                         ),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[100],
-                                  borderRadius: BorderRadius.circular(25),
-                                ),
-                                child: TextField(
-                                  controller: _messageController,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Type a message...',
-                                    border: InputBorder.none,
-                                  ),
-                                  maxLines: null,
-                                  onSubmitted: (_) => _sendMessage(),
-                                ),
-                              ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _followStatus == 'requested'
+                                ? 'Follow request sent! You can chat once they accept.'
+                                : 'Follow each other to start a conversation!',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.blue[700],
+                              fontWeight: FontWeight.w500,
                             ),
-                            const SizedBox(width: 8),
-                            Container(
-                              decoration: const BoxDecoration(
-                                color: Color(0xFF007F8C),
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                onPressed: _isSending ? null : _sendMessage,
-                                icon: _isSending
-                                    ? const SizedBox(
-                                        width: 20,
-                                        height: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: Colors.white,
-                                        ),
-                                      )
-                                    : const Icon(
-                                        Icons.send,
-                                        color: Colors.white,
-                                      ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : Container(
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[50],
-                          border: Border(
-                            top: BorderSide(color: Colors.grey[200]!),
                           ),
                         ),
-                        child: Column(
-                          children: [
-                            Icon(
-                              Icons.lock_outline,
-                              size: 40,
-                              color: Colors.grey[600],
+                      ],
+                    ),
+                  ),
+
+                // Message input - always show for any follow relationship
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        blurRadius: 5,
+                        offset: const Offset(0, -2),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          child: TextField(
+                            controller: _messageController,
+                            decoration: InputDecoration(
+                              hintText: _canSendMessages()
+                                  ? 'Type a message...'
+                                  : 'Follow each other to send messages...',
+                              border: InputBorder.none,
                             ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'Follow each other to start chatting',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey[700],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              'You need to follow each other before you can send messages',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: Colors.grey[600],
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
+                            maxLines: null,
+                            enabled: _canSendMessages(),
+                            onSubmitted: (_) => _canSendMessages() ? _sendMessage() : null,
+                          ),
                         ),
                       ),
+                      const SizedBox(width: 8),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: _canSendMessages()
+                              ? const Color(0xFF007F8C)
+                              : Colors.grey[400],
+                          shape: BoxShape.circle,
+                        ),
+                        child: IconButton(
+                          onPressed: (_isSending || !_canSendMessages()) ? null : _sendMessage,
+                          icon: _isSending
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(
+                                  Icons.send,
+                                  color: Colors.white,
+                                ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
     );

@@ -3,6 +3,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:staymitra/services/campaign_service.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/services/storage_service.dart';
+import 'package:staymitra/services/permission_service.dart';
 import 'dart:typed_data';
 
 class CreateCampaignPage extends StatefulWidget {
@@ -25,6 +26,7 @@ class _CreateCampaignPageState extends State<CreateCampaignPage> {
   final AuthService _authService = AuthService();
   final StorageService _storageService = StorageService();
   final ImagePicker _imagePicker = ImagePicker();
+  final PermissionService _permissionService = PermissionService();
 
   List<XFile> _selectedImages = [];
   String? _selectedCategory;
@@ -58,6 +60,23 @@ class _CreateCampaignPageState extends State<CreateCampaignPage> {
 
   Future<void> _pickImages() async {
     try {
+      // Request storage permissions before picking images
+      final hasPermissions = await _permissionService.requestStoragePermissions(
+        context: context,
+      );
+
+      if (!hasPermissions) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Storage permission is required to select photos'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       final List<XFile> images = await _imagePicker.pickMultiImage();
       if (images.isNotEmpty) {
         setState(() {
@@ -68,9 +87,11 @@ class _CreateCampaignPageState extends State<CreateCampaignPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error picking images: $e')),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking images: $e')),
+        );
+      }
     }
   }
 

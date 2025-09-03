@@ -13,9 +13,6 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   sign_in_button: ^4.0.1
-  lottie: ^3.3.1
-  google_fonts: ^6.2.1
-  font_awesome_icon_class: ^0.0.6
   supabase_flutter: ^2.9.1
   firebase_core: ^3.8.0
   firebase_auth: ^5.3.3
@@ -30,6 +27,7 @@ dependencies:
   chewie: ^1.7.4
   share_plus: ^7.2.1
   url_launcher: ^6.2.2
+  permission_handler: ^11.3.1
 
 dev_dependencies:
   flutter_test:
@@ -45,3 +43,6 @@ flutter:
 
   # Optimize app size
   generate: true
+
+  # Additional size optimizations
+  fonts: []  # Use system fonts only

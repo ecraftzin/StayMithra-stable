@@ -9,6 +9,7 @@ import 'package:staymitra/config/firebase_config.dart';
 import 'package:staymitra/auth/auth_wrapper.dart';
 import 'package:staymitra/services/storage_service.dart';
 import 'package:staymitra/services/migration_service.dart';
+import 'package:staymitra/services/permission_service.dart';
 import 'package:staymitra/Posts/create_post_page.dart';
 import 'package:staymitra/Campaigns/create_campaign_page.dart';
 import 'package:staymitra/ForgotPassword/reset_password_page.dart';
@@ -41,6 +42,13 @@ void main() async {
       await StorageService().createBucketsIfNeeded();
     } catch (e) {
       print('Storage initialization error: $e');
+    }
+
+    // Initialize permissions
+    try {
+      await PermissionService().initializePermissions();
+    } catch (e) {
+      print('Permission initialization error: $e');
     }
 
     // Run database migrations in background (non-blocking)

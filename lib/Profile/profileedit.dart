@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/services/user_service.dart';
 import 'package:staymitra/services/storage_service.dart';
+import 'package:staymitra/services/permission_service.dart';
 import 'package:staymitra/models/user_model.dart';
 
 class EditProfilePage extends StatefulWidget {
@@ -18,6 +19,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final _userService = UserService();
   final _storageService = StorageService();
   final _imagePicker = ImagePicker();
+  final _permissionService = PermissionService();
 
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -89,6 +91,23 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<void> _pickAndUploadPhoto() async {
     try {
+      // Request storage permissions before picking image
+      final hasPermissions = await _permissionService.requestStoragePermissions(
+        context: context,
+      );
+
+      if (!hasPermissions) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Storage permission is required to select photos'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       final XFile? image = await _imagePicker.pickImage(
         source: ImageSource.gallery,
         maxWidth: 800,

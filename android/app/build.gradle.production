@@ -1,0 +1,48 @@
+// Production-ready build.gradle with proper release keystore configuration
+// Replace the signingConfigs section in your build.gradle with this when ready for production
+
+// Load keystore properties
+def keystoreProperties = new Properties()
+def keystorePropertiesFile = rootProject.file('key.properties')
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+}
+
+// Add this to your signingConfigs section:
+signingConfigs {
+    debug {
+        keyAlias 'androiddebugkey'
+        keyPassword 'android'
+        storeFile file('debug.keystore')
+        storePassword 'android'
+    }
+    release {
+        if (keystorePropertiesFile.exists()) {
+            keyAlias keystoreProperties['keyAlias']
+            keyPassword keystoreProperties['keyPassword']
+            storeFile file(keystoreProperties['storeFile'])
+            storePassword keystoreProperties['storePassword']
+        } else {
+            // Fallback to debug keystore if release keystore not configured
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+            storeFile file('debug.keystore')
+            storePassword 'android'
+        }
+    }
+}
+
+// Your buildTypes should use:
+buildTypes {
+    debug {
+        signingConfig signingConfigs.debug
+        minifyEnabled false
+        shrinkResources false
+    }
+    release {
+        signingConfig signingConfigs.release
+        minifyEnabled true
+        shrinkResources true
+        proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+    }
+}

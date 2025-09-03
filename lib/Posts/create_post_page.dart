@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:staymitra/services/post_service.dart';
 import 'package:staymitra/services/auth_service.dart';
 import 'package:staymitra/services/storage_service.dart';
+import 'package:staymitra/services/permission_service.dart';
 
 class CreatePostPage extends StatefulWidget {
   const CreatePostPage({super.key});
@@ -19,6 +20,7 @@ class _CreatePostPageState extends State<CreatePostPage> {
   final AuthService _authService = AuthService();
   final StorageService _storageService = StorageService();
   final ImagePicker _imagePicker = ImagePicker();
+  final PermissionService _permissionService = PermissionService();
 
   List<XFile> _selectedImages = [];
   List<XFile> _selectedVideos = [];
@@ -33,6 +35,23 @@ class _CreatePostPageState extends State<CreatePostPage> {
 
   Future<void> _pickImages() async {
     try {
+      // Request storage permissions before picking images
+      final hasPermissions = await _permissionService.requestStoragePermissions(
+        context: context,
+      );
+
+      if (!hasPermissions) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Storage permission is required to select photos'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       final List<XFile> images = await _imagePicker.pickMultiImage();
       if (images.isNotEmpty) {
         setState(() {
@@ -44,17 +63,36 @@ class _CreatePostPageState extends State<CreatePostPage> {
         });
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error picking images: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error picking images: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
   Future<void> _pickVideos() async {
     try {
+      // Request storage permissions before picking videos
+      final hasPermissions = await _permissionService.requestStoragePermissions(
+        context: context,
+      );
+
+      if (!hasPermissions) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Storage permission is required to select videos'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
       final XFile? video =
           await _imagePicker.pickVideo(source: ImageSource.gallery);
       if (video != null) {
